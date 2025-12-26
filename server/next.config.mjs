@@ -2,7 +2,14 @@
 const nextConfig = {
     /* config options here */
     images: {
-        domains: ['localhost'],
+        remotePatterns: [
+            {
+                protocol: 'http',
+                hostname: 'localhost',
+                port: '',
+                pathname: '/**',
+            },
+        ],
         unoptimized: true, // 对于本地开发，禁用图片优化
     },
     // 允许静态文件服务
