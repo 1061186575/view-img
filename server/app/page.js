@@ -1,66 +1,253 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 export default function Home() {
+    const [currentPath, setCurrentPath] = useState('');
+    const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [selectedVideo, setSelectedVideo] = useState(null);
+    const [pathHistory, setPathHistory] = useState([]);
+
+    // 加载目录内容
+    const loadDirectory = async (path = '') => {
+        setLoading(true);
+        try {
+            const response = await fetch(`/api/media?folder=${encodeURIComponent(path)}`);
+            const data = await response.json();
+
+            if (response.ok) {
+                setCurrentPath(data.currentPath);
+                setItems(data.items);
+            } else {
+                console.error('Error loading directory:', data.error);
+            }
+        } catch (error) {
+            console.error('Error loading directory:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadDirectory();
+    }, []);
+
+    // 处理文件夹点击
+    const handleFolderClick = (folderPath) => {
+        setPathHistory([...pathHistory, currentPath]);
+        loadDirectory(folderPath);
+    };
+
+    // 返回上一级
+    const handleBackClick = () => {
+        if (pathHistory.length > 0) {
+            const previousPath = pathHistory[pathHistory.length - 1];
+            setPathHistory(pathHistory.slice(0, -1));
+            loadDirectory(previousPath);
+        }
+    };
+
+    // 处理图片点击
+    const handleImageClick = (imageUrl) => {
+        setSelectedImage(imageUrl);
+    };
+
+    // 处理视频点击
+    const handleVideoClick = (videoUrl) => {
+        setSelectedVideo(videoUrl);
+    };
+
+    // 格式化文件大小
+    const formatFileSize = (bytes) => {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
     return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-            <main
-                className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-                <Image
-                    className="dark:invert"
-                    src="/next.svg"
-                    alt="Next.js logo"
-                    width={100}
-                    height={20}
-                    priority
-                />
-                <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-                    <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-                        To get started, edit the page.js file.
-                    </h1>
-                    <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-                        Looking for a starting point or more instructions? Head over to{" "}
-                        <a
-                            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-                            className="font-medium text-zinc-950 dark:text-zinc-50"
-                        >
-                            Templates
-                        </a>{" "}
-                        or the{" "}
-                        <a
-                            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-                            className="font-medium text-zinc-950 dark:text-zinc-50"
-                        >
-                            Learning
-                        </a>{" "}
-                        center.
-                    </p>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+            {/* 头部导航 */}
+            <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between h-16">
+                        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                            媒体预览器
+                        </h1>
+
+                        {/* 面包屑导航 */}
+                        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                            <span>路径:</span>
+                            <span className="text-gray-900 dark:text-white">
+                                /{currentPath || '根目录'}
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-                    <a
-                        className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-                        href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-                        target="_blank"
-                        rel="noopener noreferrer"
+            </header>
+
+            {/* 主内容区域 */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                {/* 返回按钮 */}
+                {pathHistory.length > 0 && (
+                    <button
+                        onClick={handleBackClick}
+                        className="mb-6 inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                     >
-                        <Image
-                            className="dark:invert"
-                            src="/vercel.svg"
-                            alt="Vercel logomark"
-                            width={16}
-                            height={16}
-                        />
-                        Deploy Now
-                    </a>
-                    <a
-                        className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-                        href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Documentation
-                    </a>
-                </div>
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        返回上级
+                    </button>
+                )}
+
+                {/* 加载状态 */}
+                {loading ? (
+                    <div className="flex items-center justify-center py-20">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    </div>
+                ) : (
+                    /* 文件网格 */
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                        {items.map((item, index) => (
+                            <div
+                                key={index}
+                                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
+                                onClick={() => {
+                                    if (item.type === 'folder') {
+                                        handleFolderClick(item.path);
+                                    } else if (item.type === 'image') {
+                                        handleImageClick(item.url);
+                                    } else if (item.type === 'video') {
+                                        handleVideoClick(item.url);
+                                    }
+                                }}
+                            >
+                                <div className="aspect-square relative">
+                                    {item.type === 'folder' ? (
+                                        /* 文件夹图标 */
+                                        <div className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
+                                            <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
+                                            </svg>
+                                        </div>
+                                    ) : item.type === 'image' ? (
+                                        /* 图片缩略图 */
+                                        <Image
+                                            src={item.url}
+                                            alt={item.name}
+                                            fill
+                                            className="object-cover"
+                                            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 16vw, 12vw"
+                                        />
+                                    ) : (
+                                        /* 视频缩略图 */
+                                        <div className="relative h-full">
+                                            <video
+                                                className="w-full h-full object-cover"
+                                                preload="metadata"
+                                                muted
+                                            >
+                                                <source src={item.url} />
+                                            </video>
+                                            {/* 播放按钮覆盖层 */}
+                                            <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+                                                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M8 5v14l11-7z"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* 文件信息 */}
+                                <div className="p-3">
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                        {item.name}
+                                    </p>
+                                    {item.size && (
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                            {formatFileSize(item.size)}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* 空文件夹提示 */}
+                {!loading && items.length === 0 && (
+                    <div className="text-center py-20">
+                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                        </svg>
+                        <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
+                            暂无媒体文件
+                        </h3>
+                        <p className="mt-2 text-gray-500 dark:text-gray-400">
+                            请在 public/media 目录下添加图片或视频文件
+                        </p>
+                    </div>
+                )}
             </main>
+
+            {/* 图片预览模态框 */}
+            {selectedImage && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
+                    onClick={() => setSelectedImage(null)}
+                >
+                    <div className="relative max-w-full max-h-full">
+                        <button
+                            className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
+                            onClick={() => setSelectedImage(null)}
+                        >
+                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        <Image
+                            src={selectedImage}
+                            alt="预览图片"
+                            width={1200}
+                            height={800}
+                            className="max-w-full max-h-full object-contain"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* 视频播放模态框 */}
+            {selectedVideo && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
+                    onClick={() => setSelectedVideo(null)}
+                >
+                    <div className="relative max-w-full max-h-full">
+                        <button
+                            className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
+                            onClick={() => setSelectedVideo(null)}
+                        >
+                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        <video
+                            src={selectedVideo}
+                            controls
+                            autoPlay
+                            className="max-w-full max-h-full"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

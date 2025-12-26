@@ -2,6 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Node.js v22.21.1
 
 ## Project Overview
 

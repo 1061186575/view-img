@@ -24,3 +24,28 @@ body {
     color: var(--foreground);
     font-family: Arial, Helvetica, sans-serif;
 }
+
+/* 移动端优化样式 */
+@media (max-width: 640px) {
+    /* 优化移动端触摸体验 */
+    .touch-item {
+        min-height: 44px; /* iOS 推荐的最小触摸目标 */
+    }
+}
+
+/* 模态框滚动优化 */
+.modal-content {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 图片和视频容器优化 */
+.media-container {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* 视频控件样式优化 */
+video {
+    outline: none;
+}
