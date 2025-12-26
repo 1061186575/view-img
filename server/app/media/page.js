@@ -7,6 +7,7 @@ import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
 import { getMediaDirectory } from '@/lib/api';
 import VideoThumbnail from '../../components/VideoThumbnail';
+import { checkIsPC, formatFileSize, generateBreadcrumbs, getParentPath } from '@/utils';
 
 export default function MediaPage() {
     const router = useRouter();
@@ -18,6 +19,8 @@ export default function MediaPage() {
     const [selectedVideo, setSelectedVideo] = useState(null);
     const [errorMessage, setErrorMessage] = useState('');
     const [showErrorModal, setShowErrorModal] = useState(false);
+    const [pathInput, setPathInput] = useState('');
+    const [isPC, setIsPC] = useState(false);
     const autoLoadVideo = true;
     // const autoLoadVideo = false;
 
@@ -64,11 +67,28 @@ export default function MediaPage() {
         }
     };
 
+    // 检测是否为PC端
+    useEffect(() => {
+        const updateDeviceType = () => {
+            setIsPC(checkIsPC());
+        };
+
+        updateDeviceType();
+        window.addEventListener('resize', updateDeviceType);
+        return () => window.removeEventListener('resize', updateDeviceType);
+    }, []);
+
     // 初始化时从URL获取路径
     useEffect(() => {
         const pathFromUrl = searchParams.get('path') || '';
         loadDirectory(pathFromUrl);
+        setPathInput(pathFromUrl);
     }, []);
+
+    // 当currentPath改变时，更新输入框
+    useEffect(() => {
+        setPathInput(currentPath);
+    }, [currentPath]);
 
     // 处理文件夹点击
     const handleFolderClick = (folderPath) => {
@@ -77,19 +97,31 @@ export default function MediaPage() {
 
     // 返回上一级
     const handleBackClick = () => {
-        const pathParts = currentPath.split('/').filter(part => part.length > 0);
-        if (pathParts.length > 0) {
-            pathParts.pop();
-            const parentPath = pathParts.join('/');
-            loadDirectory(parentPath);
-        } else {
-            loadDirectory('');
-        }
+        const parentPath = getParentPath(currentPath);
+        loadDirectory(parentPath);
     };
 
     // 面包屑导航点击
     const handleBreadcrumbClick = (targetPath) => {
         loadDirectory(targetPath);
+    };
+
+    // 处理路径输入
+    const handlePathInputChange = (e) => {
+        setPathInput(e.target.value);
+    };
+
+    // 处理路径输入提交
+    const handlePathInputSubmit = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            loadDirectory(pathInput);
+        }
+    };
+
+    // 处理跳转按钮点击
+    const handleGoClick = () => {
+        loadDirectory(pathInput);
     };
 
 
@@ -98,33 +130,7 @@ export default function MediaPage() {
         setSelectedVideo(videoUrl);
     };
 
-    // 格式化文件大小
-    const formatFileSize = (bytes) => {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    };
 
-    // 生成面包屑路径
-    const generateBreadcrumbs = () => {
-        if (!currentPath) return [{ name: '根目录', path: '' }];
-
-        const parts = currentPath.split('/').filter(part => part.length > 0);
-        const breadcrumbs = [{ name: '根目录', path: '' }];
-
-        let currentBreadcrumbPath = '';
-        parts.forEach(part => {
-            currentBreadcrumbPath += (currentBreadcrumbPath ? '/' : '') + part;
-            breadcrumbs.push({
-                name: part,
-                path: currentBreadcrumbPath
-            });
-        });
-
-        return breadcrumbs;
-    };
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -138,11 +144,11 @@ export default function MediaPage() {
 
                         {/* 面包屑导航 */}
                         <div className="flex items-center space-x-2 text-sm">
-                            {generateBreadcrumbs().map((breadcrumb, index, array) => (
+                            {generateBreadcrumbs(currentPath).map((breadcrumb, index, array) => (
                                 <div key={index} className="flex items-center">
                                     <button
                                         onClick={() => handleBreadcrumbClick(breadcrumb.path)}
-                                        className={`${
+                                        className={`cursor-pointer ${
                                             index === array.length - 1
                                                 ? 'text-gray-900 dark:text-white font-medium'
                                                 : 'text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300'
@@ -162,18 +168,41 @@ export default function MediaPage() {
 
             {/* 主内容区域 */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                {/* 返回按钮 */}
-                {currentPath && (
-                    <button
-                        onClick={handleBackClick}
-                        className="mb-6 inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                    >
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        返回上级
-                    </button>
-                )}
+                {/* 导航栏：返回按钮和路径输入 */}
+                <div className="flex items-center gap-4 mb-6">
+                    {/* 返回按钮 */}
+                    {currentPath && (
+                        <button
+                            onClick={handleBackClick}
+                            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                        >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            返回上级
+                        </button>
+                    )}
+
+                    {/* PC端路径输入框 */}
+                    {isPC && (
+                        <div className="flex items-center gap-2 flex-1 max-w-md">
+                            <input
+                                type="text"
+                                value={pathInput}
+                                onChange={handlePathInputChange}
+                                onKeyDown={handlePathInputSubmit}
+                                placeholder="输入文件夹路径 (例如: images/2024)"
+                                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                            <button
+                                onClick={handleGoClick}
+                                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                            >
+                                跳转
+                            </button>
+                        </div>
+                    )}
+                </div>
 
                 {/* 加载状态 */}
                 {loading ? (
