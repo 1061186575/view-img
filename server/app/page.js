@@ -1,312 +1,153 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { getMediaDirectory } from '../lib/api';
+import Link from 'next/link';
 
 export default function Home() {
-    const [currentPath, setCurrentPath] = useState('');
-    const [items, setItems] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [selectedImage, setSelectedImage] = useState(null);
-    const [selectedVideo, setSelectedVideo] = useState(null);
-    const [pathHistory, setPathHistory] = useState([]);
-    const [errorMessage, setErrorMessage] = useState('');
-    const [showErrorModal, setShowErrorModal] = useState(false);
-
-    // 全局错误处理函数
-    const showError = (message) => {
-        setErrorMessage(message);
-        setShowErrorModal(true);
-    };
-
-    // 关闭错误弹窗
-    const closeErrorModal = () => {
-        setShowErrorModal(false);
-        setErrorMessage('');
-    };
-
-    // 加载目录内容
-    const loadDirectory = async (path = '') => {
-        setLoading(true);
-        try {
-            const result = await getMediaDirectory(path);
-
-            if (result.success) {
-                setCurrentPath(result.data.currentPath);
-                setItems(result.data.items);
-            }
-        } catch (error) {
-            console.error('Error loading directory:', error);
-            showError(error.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadDirectory();
-    }, []);
-
-    // 处理文件夹点击
-    const handleFolderClick = (folderPath) => {
-        setPathHistory([...pathHistory, currentPath]);
-        loadDirectory(folderPath);
-    };
-
-    // 返回上一级
-    const handleBackClick = () => {
-        if (pathHistory.length > 0) {
-            const previousPath = pathHistory[pathHistory.length - 1];
-            setPathHistory(pathHistory.slice(0, -1));
-            loadDirectory(previousPath);
-        }
-    };
-
-    // 处理图片点击
-    const handleImageClick = (imageUrl) => {
-        setSelectedImage(imageUrl);
-    };
-
-    // 处理视频点击
-    const handleVideoClick = (videoUrl) => {
-        setSelectedVideo(videoUrl);
-    };
-
-    // 格式化文件大小
-    const formatFileSize = (bytes) => {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    };
-
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
             {/* 头部导航 */}
             <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
                         <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                            媒体预览器
+                            图片视频预览站
                         </h1>
-
-                        {/* 面包屑导航 */}
-                        <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                            <span>路径:</span>
-                            <span className="text-gray-900 dark:text-white">
-                                /{currentPath || '根目录'}
-                            </span>
-                        </div>
+                        <nav className="flex space-x-4">
+                            <Link
+                                href="/media"
+                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                            >
+                                媒体库
+                            </Link>
+                        </nav>
                     </div>
                 </div>
             </header>
 
             {/* 主内容区域 */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                {/* 返回按钮 */}
-                {pathHistory.length > 0 && (
-                    <button
-                        onClick={handleBackClick}
-                        className="mb-6 inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                    >
-                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        返回上级
-                    </button>
-                )}
-
-                {/* 加载状态 */}
-                {loading ? (
-                    <div className="flex items-center justify-center py-20">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                    </div>
-                ) : (
-                    /* 文件网格 */
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-                        {items.map((item, index) => (
-                            <div
-                                key={index}
-                                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
-                                onClick={() => {
-                                    if (item.type === 'folder') {
-                                        handleFolderClick(item.path);
-                                    } else if (item.type === 'image') {
-                                        handleImageClick(item.url);
-                                    } else if (item.type === 'video') {
-                                        handleVideoClick(item.url);
-                                    }
-                                }}
-                            >
-                                <div className="aspect-square relative">
-                                    {item.type === 'folder' ? (
-                                        /* 文件夹图标 */
-                                        <div className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
-                                            <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
-                                            </svg>
-                                        </div>
-                                    ) : item.type === 'image' ? (
-                                        /* 图片缩略图 */
-                                        <Image
-                                            src={item.url}
-                                            alt={item.name}
-                                            fill
-                                            className="object-cover"
-                                            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 16vw, 12vw"
-                                        />
-                                    ) : (
-                                        /* 视频缩略图 */
-                                        <div className="relative h-full">
-                                            <video
-                                                className="w-full h-full object-cover"
-                                                preload="metadata"
-                                                muted
-                                            >
-                                                <source src={item.url} />
-                                            </video>
-                                            {/* 播放按钮覆盖层 */}
-                                            <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                                                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                                    <path d="M8 5v14l11-7z"/>
-                                                </svg>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* 文件信息 */}
-                                <div className="p-3">
-                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                        {item.name}
-                                    </p>
-                                    {item.size && (
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            {formatFileSize(item.size)}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* 空文件夹提示 */}
-                {!loading && items.length === 0 && (
-                    <div className="text-center py-20">
-                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                        </svg>
-                        <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
-                            暂无媒体文件
-                        </h3>
-                        <p className="mt-2 text-gray-500 dark:text-gray-400">
-                            请在 public/media 目录下添加图片或视频文件
+            <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="text-center">
+                    {/* Hero Section */}
+                    <div className="mb-12">
+                        <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+                            欢迎使用
+                            <span className="block text-blue-600 dark:text-blue-400">媒体预览站</span>
+                        </h1>
+                        <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+                            一个简洁、优雅的在线图片和视频预览平台。支持文件夹管理、全屏预览、响应式设计，让您的媒体文件管理变得简单高效。
                         </p>
                     </div>
-                )}
-            </main>
 
-            {/* 图片预览模态框 */}
-            {selectedImage && (
-                <div
-                    className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
-                    onClick={() => setSelectedImage(null)}
-                >
-                    <div className="relative max-w-full max-h-full">
-                        <button
-                            className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
-                            onClick={() => setSelectedImage(null)}
-                        >
-                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                        <Image
-                            src={selectedImage}
-                            alt="预览图片"
-                            width={1200}
-                            height={800}
-                            className="max-w-full max-h-full object-contain"
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                    </div>
-                </div>
-            )}
-
-            {/* 视频播放模态框 */}
-            {selectedVideo && (
-                <div
-                    className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
-                    onClick={() => setSelectedVideo(null)}
-                >
-                    <div className="relative max-w-full max-h-full">
-                        <button
-                            className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
-                            onClick={() => setSelectedVideo(null)}
-                        >
-                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                        <video
-                            src={selectedVideo}
-                            controls
-                            autoPlay
-                            className="max-w-full max-h-full"
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                    </div>
-                </div>
-            )}
-
-            {/* 错误弹窗模态框 */}
-            {showErrorModal && (
-                <div className="fixed top-4 right-4 z-50 max-w-md w-auto">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 p-6 animate-slide-in-right">
-                        {/* 错误图标和关闭按钮 */}
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0">
-                                    <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                    </svg>
-                                </div>
-                                <h3 className="ml-2 text-sm font-medium text-gray-900 dark:text-white">
-                                    错误提示
-                                </h3>
-                            </div>
-                            <button
-                                onClick={closeErrorModal}
-                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    {/* 功能特性 */}
+                    <div className="grid md:grid-cols-3 gap-8 mb-12">
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
-                            </button>
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">图片预览</h3>
+                            <p className="text-gray-600 dark:text-gray-400">支持 JPG、PNG、GIF、WebP 等多种格式，点击放大查看高清图片</p>
                         </div>
 
-                        {/* 错误信息 */}
-                        <div className="mb-4">
-                            <p className="text-sm text-gray-600 dark:text-gray-300">
-                                {errorMessage}
-                            </p>
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">视频播放</h3>
+                            <p className="text-gray-600 dark:text-gray-400">支持 MP4、WebM、MOV 等格式，内置播放器支持全屏和进度控制</p>
                         </div>
 
-                        {/* 按钮 */}
-                        <div className="flex justify-end">
-                            <button
-                                onClick={closeErrorModal}
-                                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
-                            >
-                                确定
-                            </button>
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
+                            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mx-auto mb-4">
+                                <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
+                                </svg>
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">文件夹管理</h3>
+                            <p className="text-gray-600 dark:text-gray-400">支持无限层级的文件夹嵌套，URL同步，刷新页面保持当前位置</p>
+                        </div>
+                    </div>
+
+                    {/* CTA按钮 */}
+                    <div className="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
+                        <Link
+                            href="/media"
+                            className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
+                        >
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                            进入媒体库
+                        </Link>
+
+                        <a
+                            href="#features"
+                            className="inline-flex items-center px-8 py-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium rounded-lg shadow-lg hover:shadow-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
+                        >
+                            了解更多
+                        </a>
+                    </div>
+                </div>
+
+                {/* 使用说明 */}
+                <div id="features" className="mt-20">
+                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">
+                        如何使用
+                    </h2>
+
+                    <div className="space-y-8">
+                        <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg">
+                            <div className="flex items-start space-x-4">
+                                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                                    <span className="text-blue-600 dark:text-blue-400 font-semibold">1</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                        上传媒体文件
+                                    </h3>
+                                    <p className="text-gray-600 dark:text-gray-400">
+                                        将您的图片和视频文件放入 <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">public/media/</code> 目录中。支持创建子文件夹来组织您的文件。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg">
+                            <div className="flex items-start space-x-4">
+                                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                                    <span className="text-blue-600 dark:text-blue-400 font-semibold">2</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                        浏览和管理
+                                    </h3>
+                                    <p className="text-gray-600 dark:text-gray-400">
+                                        点击进入媒体库，通过网格视图浏览所有文件。点击文件夹可以深入查看，面包屑导航帮您快速定位。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg">
+                            <div className="flex items-start space-x-4">
+                                <div className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                                    <span className="text-blue-600 dark:text-blue-400 font-semibold">3</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                        预览和分享
+                                    </h3>
+                                    <p className="text-gray-600 dark:text-gray-400">
+                                        点击图片放大查看，点击视频直接播放。URL会自动更新，您可以复制链接分享特定文件夹给他人。
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            )}
+            </main>
         </div>
     );
 }

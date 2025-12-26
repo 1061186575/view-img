@@ -40,15 +40,19 @@ The development server runs on http://localhost:3000 by default.
 ```
 ├── app/                    # Next.js App Router pages and layouts
 │   ├── layout.js          # Root layout with Geist fonts and Chinese lang
-│   ├── page.js            # Homepage (starter template content)
-│   ├── test/page.js       # Test page with Tailwind styling
-│   └── globals.css        # Global styles
-├── public/                # Static assets (SVGs for Next.js branding)
-├── package.json           # Dependencies and scripts
-├── next.config.mjs        # Next.js configuration (minimal)
-├── eslint.config.mjs      # ESLint configuration
-├── postcss.config.mjs     # PostCSS with Tailwind
-└── jsconfig.json          # Path aliases (@/* -> ./*)
+│   ├── page.js            # Homepage with welcome page and navigation
+│   ├── media/page.js      # Media browser with URL synchronization
+│   ├── api/media/route.js # API endpoint for directory listing
+│   └── globals.css        # Global styles with animations
+├── lib/                   # Utility functions
+│   └── api.js            # API request helpers with error handling
+├── public/               # Static assets and media files
+│   └── media/           # Media directory (images, videos, folders)
+├── package.json          # Dependencies and scripts
+├── next.config.mjs       # Next.js configuration with image settings
+├── eslint.config.mjs     # ESLint configuration
+├── postcss.config.mjs    # PostCSS with Tailwind
+└── jsconfig.json         # Path aliases (@/* -> ./*)
 ```
 
 ## Key Configuration Details
@@ -89,10 +93,18 @@ All API responses use standard HTTP status codes:
 
 ## Features
 
+### 🏠 **Landing Page (`/`)**
+- **Welcome Interface**: Beautiful landing page with feature introduction
+- **Navigation**: Direct links to media browser
+- **Usage Guide**: Step-by-step instructions for new users
+
+### 📁 **Media Browser (`/media`)**
+- **URL Synchronization**: Folder paths are reflected in URL query parameters
+- **Refresh Persistence**: Page refresh maintains current folder location
+- **Breadcrumb Navigation**: Click any breadcrumb to navigate directly
 - **Responsive Grid Layout**: Auto-adjusts for mobile (2 cols) to desktop (8 cols)
 - **Image Preview**: Click to view full-size images in modal
 - **Video Playback**: Click to play videos with native controls
-- **Folder Navigation**: Browse nested directories with breadcrumb navigation
 - **Non-intrusive Error Handling**: Slide-in notifications in top-right corner without blocking content
 - **Mobile Optimization**: Touch-friendly interface with optimized controls
 
