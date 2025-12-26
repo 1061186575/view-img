@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { getMediaDirectory } from '../../lib/api';
+import { PhotoProvider, PhotoView } from 'react-photo-view';
+import 'react-photo-view/dist/react-photo-view.css';
+import { getMediaDirectory } from '@/lib/api';
 
 export default function MediaPage() {
     const router = useRouter();
@@ -12,7 +14,6 @@ export default function MediaPage() {
     const [currentPath, setCurrentPath] = useState('');
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedImage, setSelectedImage] = useState(null);
     const [selectedVideo, setSelectedVideo] = useState(null);
     const [errorMessage, setErrorMessage] = useState('');
     const [showErrorModal, setShowErrorModal] = useState(false);
@@ -88,10 +89,6 @@ export default function MediaPage() {
         loadDirectory(targetPath);
     };
 
-    // 处理图片点击
-    const handleImageClick = (imageUrl) => {
-        setSelectedImage(imageUrl);
-    };
 
     // 处理视频点击
     const handleVideoClick = (videoUrl) => {
@@ -182,72 +179,95 @@ export default function MediaPage() {
                     </div>
                 ) : (
                     /* 文件网格 */
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-                        {items.map((item, index) => (
-                            <div
-                                key={index}
-                                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
-                                onClick={() => {
-                                    if (item.type === 'folder') {
-                                        handleFolderClick(item.path);
-                                    } else if (item.type === 'image') {
-                                        handleImageClick(item.url);
-                                    } else if (item.type === 'video') {
-                                        handleVideoClick(item.url);
-                                    }
-                                }}
-                            >
-                                <div className="aspect-square relative">
-                                    {item.type === 'folder' ? (
-                                        /* 文件夹图标 */
-                                        <div className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
-                                            <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
-                                            </svg>
-                                        </div>
-                                    ) : item.type === 'image' ? (
-                                        /* 图片缩略图 */
-                                        <Image
-                                            src={item.url}
-                                            alt={item.name}
-                                            fill
-                                            className="object-cover"
-                                            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 16vw, 12vw"
-                                        />
+                    <PhotoProvider
+                        speed={() => 200}
+                        easing={(type) => (type === 2 ? 'cubic-bezier(0.36, 0, 0.66, -0.56)' : 'cubic-bezier(0.34, 1.56, 0.64, 1)')}
+                    >
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                            {items.map((item, index) => (
+                                <div key={index}>
+                                    {item.type === 'image' ? (
+                                        /* 图片项目 - 使用PhotoView包装 */
+                                        <PhotoView src={item.url}>
+                                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
+                                                <div className="aspect-square relative">
+                                                    <Image
+                                                        src={item.url}
+                                                        alt={item.name}
+                                                        fill
+                                                        className="object-cover"
+                                                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 16vw, 12vw"
+                                                    />
+                                                </div>
+                                                {/* 文件信息 */}
+                                                <div className="p-3">
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                                        {item.name}
+                                                    </p>
+                                                    {item.size && (
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                            {formatFileSize(item.size)}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </PhotoView>
                                     ) : (
-                                        /* 视频缩略图 */
-                                        <div className="relative h-full">
-                                            <video
-                                                className="w-full h-full object-cover"
-                                                preload="metadata"
-                                                muted
-                                            >
-                                                <source src={item.url} />
-                                            </video>
-                                            {/* 播放按钮覆盖层 */}
-                                            <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                                                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                                    <path d="M8 5v14l11-7z"/>
-                                                </svg>
+                                        /* 非图片项目 - 普通处理 */
+                                        <div
+                                            className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
+                                            onClick={() => {
+                                                if (item.type === 'folder') {
+                                                    handleFolderClick(item.path);
+                                                } else if (item.type === 'video') {
+                                                    handleVideoClick(item.url);
+                                                }
+                                            }}
+                                        >
+                                            <div className="aspect-square relative">
+                                                {item.type === 'folder' ? (
+                                                    /* 文件夹图标 */
+                                                    <div className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
+                                                        <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
+                                                        </svg>
+                                                    </div>
+                                                ) : (
+                                                    /* 视频缩略图 */
+                                                    <div className="relative h-full">
+                                                        <video
+                                                            className="w-full h-full object-cover"
+                                                            preload="metadata"
+                                                            muted
+                                                        >
+                                                            <source src={item.url} />
+                                                        </video>
+                                                        {/* 播放按钮覆盖层 */}
+                                                        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+                                                            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                                                <path d="M8 5v14l11-7z"/>
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {/* 文件信息 */}
+                                            <div className="p-3">
+                                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                                    {item.name}
+                                                </p>
+                                                {item.size && (
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                        {formatFileSize(item.size)}
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                     )}
                                 </div>
-
-                                {/* 文件信息 */}
-                                <div className="p-3">
-                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                        {item.name}
-                                    </p>
-                                    {item.size && (
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            {formatFileSize(item.size)}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    </PhotoProvider>
                 )}
 
                 {/* 空文件夹提示 */}
@@ -266,32 +286,6 @@ export default function MediaPage() {
                 )}
             </main>
 
-            {/* 图片预览模态框 */}
-            {selectedImage && (
-                <div
-                    className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
-                    onClick={() => setSelectedImage(null)}
-                >
-                    <div className="relative max-w-full max-h-full">
-                        <button
-                            className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
-                            onClick={() => setSelectedImage(null)}
-                        >
-                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                        <Image
-                            src={selectedImage}
-                            alt="预览图片"
-                            width={1200}
-                            height={800}
-                            className="max-w-full max-h-full object-contain"
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                    </div>
-                </div>
-            )}
 
             {/* 视频播放模态框 */}
             {selectedVideo && (

@@ -16,6 +16,7 @@ This is a Next.js 16 project with the App Router architecture, featuring React 1
 - **Language**: JavaScript (JSX) with JSConfig path aliases
 - **Linting**: ESLint 9 with Next.js configuration
 - **Fonts**: Geist (Sans and Mono) from Google Fonts
+- **Image Viewer**: react-photo-view for advanced image preview with zoom/pan
 
 ## Development Commands
 
@@ -103,7 +104,12 @@ All API responses use standard HTTP status codes:
 - **Refresh Persistence**: Page refresh maintains current folder location
 - **Breadcrumb Navigation**: Click any breadcrumb to navigate directly
 - **Responsive Grid Layout**: Auto-adjusts for mobile (2 cols) to desktop (8 cols)
-- **Image Preview**: Click to view full-size images in modal
+- **Advanced Image Preview**:
+  - Complete image display regardless of aspect ratio
+  - Mouse wheel zoom in/out
+  - Touch pinch-to-zoom on mobile devices
+  - Pan/drag support when zoomed
+  - Smooth animations and transitions
 - **Video Playback**: Click to play videos with native controls
 - **Non-intrusive Error Handling**: Slide-in notifications in top-right corner without blocking content
 - **Mobile Optimization**: Touch-friendly interface with optimized controls
