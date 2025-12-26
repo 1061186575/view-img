@@ -3,10 +3,6 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 
-# 非常重要
-1. class 类名使用小驼峰, 例如 class="uploadTips", class="failedStatus"
-
-
 ## Project Overview
 
 This is a Next.js 16 project with the App Router architecture, featuring React 19 and Tailwind CSS 4. The project appears to be named "view-img" (based on directory structure) and is set up as a standard Next.js application with modern tooling.
