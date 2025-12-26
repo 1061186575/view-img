@@ -7,7 +7,7 @@ import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
 import { getMediaDirectory } from '@/lib/api';
 import VideoThumbnail from '../../components/VideoThumbnail';
-import { checkIsPC, formatFileSize, generateBreadcrumbs, getParentPath } from '@/utils';
+import { checkIsPC, formatFileSize, formatShortTime, generateBreadcrumbs, getParentPath } from '@/utils';
 
 export default function MediaPage() {
     const router = useRouter();
@@ -236,11 +236,18 @@ export default function MediaPage() {
                                                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                                                         {item.name}
                                                     </p>
-                                                    {item.size && (
-                                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                            {formatFileSize(item.size)}
-                                                        </p>
-                                                    )}
+                                                    <div className="flex justify-between items-center mt-1">
+                                                        {item.size && (
+                                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                                {formatFileSize(item.size)}
+                                                            </p>
+                                                        )}
+                                                        {item.mtime && (
+                                                            <p className="text-xs text-gray-400 dark:text-gray-500">
+                                                                {formatShortTime(item.mtime)}
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </PhotoView>
@@ -280,11 +287,18 @@ export default function MediaPage() {
                                                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                                                     {item.name}
                                                 </p>
-                                                {item.size && (
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                        {formatFileSize(item.size)}
-                                                    </p>
-                                                )}
+                                                <div className="flex justify-between items-center mt-1">
+                                                    {item.size && (
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                            {formatFileSize(item.size)}
+                                                        </p>
+                                                    )}
+                                                    {item.mtime && (
+                                                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                                                            {formatShortTime(item.mtime)}
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     )}

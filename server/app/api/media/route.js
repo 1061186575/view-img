@@ -42,7 +42,9 @@ export async function GET(request) {
                 result.push({
                     name: item,
                     type: 'folder',
-                    path: folder ? `${folder}/${item}` : item
+                    path: folder ? `${folder}/${item}` : item,
+                    mtime: stats.mtime.getTime(), // 修改时间
+                    birthtime: stats.birthtime.getTime() // 创建时间
                 });
             } else if (stats.isFile()) {
                 const ext = path.extname(item).toLowerCase();
@@ -54,7 +56,9 @@ export async function GET(request) {
                         type: 'image',
                         path: folder ? `${folder}/${item}` : item,
                         url: `/media/${folder ? `${folder}/` : ''}${item}`,
-                        size: stats.size
+                        size: stats.size,
+                        mtime: stats.mtime.getTime(), // 修改时间
+                        birthtime: stats.birthtime.getTime() // 创建时间
                     });
                 } else if (SUPPORTED_VIDEO_EXTENSIONS.includes(ext)) {
                     // 添加视频
@@ -63,17 +67,30 @@ export async function GET(request) {
                         type: 'video',
                         path: folder ? `${folder}/${item}` : item,
                         url: `/media/${folder ? `${folder}/` : ''}${item}`,
-                        size: stats.size
+                        size: stats.size,
+                        mtime: stats.mtime.getTime(), // 修改时间
+                        birthtime: stats.birthtime.getTime() // 创建时间
                     });
                 }
                 // 忽略其他文件类型
             }
         }
 
-        // 排序：文件夹在前，然后按名称排序
+        // 排序：文件夹优先，然后按更新时间优先，最后按创建时间优先
         result.sort((a, b) => {
+            // 1. 文件夹优先
             if (a.type === 'folder' && b.type !== 'folder') return -1;
             if (a.type !== 'folder' && b.type === 'folder') return 1;
+
+            // 2. 按更新时间排序（新的在前）
+            const mtimeDiff = b.mtime - a.mtime;
+            if (mtimeDiff !== 0) return mtimeDiff;
+
+            // 3. 如果更新时间相同，按创建时间排序（新的在前）
+            const birthtimeDiff = b.birthtime - a.birthtime;
+            if (birthtimeDiff !== 0) return birthtimeDiff;
+
+            // 4. 如果时间都相同，按名称排序
             return a.name.localeCompare(b.name);
         });
 

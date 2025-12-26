@@ -45,6 +45,41 @@ export const formatRelativeTime = (date) => {
 };
 
 /**
+ * 格式化时间为短格式显示
+ * @param {Date|string|number} date - 日期对象、日期字符串或时间戳
+ * @returns {string} 短格式时间字符串
+ */
+export const formatShortTime = (date) => {
+    const target = new Date(date);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const targetDate = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+
+    // 如果是今天
+    if (targetDate.getTime() === today.getTime()) {
+        return target.toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    // 如果是今年
+    if (target.getFullYear() === now.getFullYear()) {
+        return target.toLocaleDateString('zh-CN', {
+            month: '2-digit',
+            day: '2-digit'
+        });
+    }
+
+    // 其他年份
+    return target.toLocaleDateString('zh-CN', {
+        year: '2-digit',
+        month: '2-digit',
+        day: '2-digit'
+    });
+};
+
+/**
  * 格式化数字，添加千位分隔符
  * @param {number} num - 要格式化的数字
  * @returns {string} 格式化后的数字字符串
