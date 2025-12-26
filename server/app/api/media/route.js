@@ -5,14 +5,16 @@ import path from 'path';
 // 支持的图片和视频文件扩展名
 const SUPPORTED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'];
 const SUPPORTED_VIDEO_EXTENSIONS = ['.mp4', '.webm', '.ogg', '.avi', '.mov', '.wmv', '.flv', '.mkv'];
+const SUPPORTED_AUDIO_EXTENSIONS = ['.mp3'];
 
 export async function GET(request) {
     try {
+        const mediaPath = 'media';
         const { searchParams } = new URL(request.url);
         const folder = searchParams.get('folder') || '';
 
         // 构建完整路径，确保安全性
-        const basePath = path.join(process.cwd(), 'public', 'media');
+        const basePath = path.join(process.cwd(), 'public', mediaPath);
         const fullPath = path.join(basePath, folder);
 
         // 安全检查：确保路径在media目录内
@@ -49,27 +51,32 @@ export async function GET(request) {
             } else if (stats.isFile()) {
                 const ext = path.extname(item).toLowerCase();
 
+                const baseInfo = {
+                    name: item,
+                    path: folder ? `${folder}/${item}` : item,
+                    url: `/${mediaPath}/${folder ? `${folder}/` : ''}${item}`,
+                    size: stats.size,
+                    mtime: stats.mtime.getTime(), // 修改时间
+                    birthtime: stats.birthtime.getTime() // 创建时间
+                }
+
                 if (SUPPORTED_IMAGE_EXTENSIONS.includes(ext)) {
                     // 添加图片
                     result.push({
-                        name: item,
                         type: 'image',
-                        path: folder ? `${folder}/${item}` : item,
-                        url: `/media/${folder ? `${folder}/` : ''}${item}`,
-                        size: stats.size,
-                        mtime: stats.mtime.getTime(), // 修改时间
-                        birthtime: stats.birthtime.getTime() // 创建时间
+                        ...baseInfo,
                     });
                 } else if (SUPPORTED_VIDEO_EXTENSIONS.includes(ext)) {
                     // 添加视频
                     result.push({
-                        name: item,
                         type: 'video',
-                        path: folder ? `${folder}/${item}` : item,
-                        url: `/media/${folder ? `${folder}/` : ''}${item}`,
-                        size: stats.size,
-                        mtime: stats.mtime.getTime(), // 修改时间
-                        birthtime: stats.birthtime.getTime() // 创建时间
+                        ...baseInfo,
+                    });
+                } else if (SUPPORTED_AUDIO_EXTENSIONS.includes(ext)) {
+                    // 添加音频
+                    result.push({
+                        type: 'audio',
+                        ...baseInfo,
                     });
                 }
                 // 忽略其他文件类型

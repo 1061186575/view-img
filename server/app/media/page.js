@@ -130,6 +130,10 @@ export default function MediaPage() {
         setSelectedVideo(videoUrl);
     };
 
+    const handleAudioClick = (audioName) => {
+        const path = searchParams.get('path') || '';
+        location.href = `/media/audio?audioName=${audioName}&path=${path}`
+    };
 
 
     return (
@@ -174,7 +178,7 @@ export default function MediaPage() {
                     {currentPath && (
                         <button
                             onClick={handleBackClick}
-                            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer"
                         >
                             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -196,7 +200,7 @@ export default function MediaPage() {
                             />
                             <button
                                 onClick={handleGoClick}
-                                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors cursor-pointer"
                             >
                                 跳转
                             </button>
@@ -260,6 +264,10 @@ export default function MediaPage() {
                                                     handleFolderClick(item.path);
                                                 } else if (item.type === 'video') {
                                                     handleVideoClick(item.url);
+                                                } else if (item.type === 'audio') {
+                                                    handleAudioClick(item.name);
+                                                } else {
+                                                    alert('未知类型')
                                                 }
                                             }}
                                         >
@@ -275,11 +283,16 @@ export default function MediaPage() {
                                                                     d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
                                                             </svg>
                                                         </div>
-                                                    ) :
-                                                    <VideoThumbnail
-                                                        autoLoadVideo={autoLoadVideo}
-                                                        src={item.url}
-                                                    />
+                                                    ) : (
+                                                        item.type === 'video' ?
+                                                            <VideoThumbnail
+                                                                autoLoadVideo={autoLoadVideo}
+                                                                src={item.url}
+                                                            /> :
+                                                            <div className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
+                                                               音乐
+                                                            </div>
+                                                    )
                                                 }
                                             </div>
                                             {/* 文件信息 */}
