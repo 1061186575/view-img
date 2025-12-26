@@ -17,12 +17,16 @@ export async function GET(request) {
 
         // 安全检查：确保路径在media目录内
         if (!fullPath.startsWith(basePath)) {
-            return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
+            return NextResponse.json({
+                error: '访问路径不合法'
+            }, { status: 400 });
         }
 
         // 检查目录是否存在
         if (!fs.existsSync(fullPath)) {
-            return NextResponse.json({ error: 'Directory not found' }, { status: 404 });
+            return NextResponse.json({
+                error: '请求的目录未找到'
+            }, { status: 404 });
         }
 
         // 读取目录内容
@@ -80,6 +84,8 @@ export async function GET(request) {
 
     } catch (error) {
         console.error('Error reading directory:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({
+            error: '读取目录时发生错误，请稍后重试'
+        }, { status: 500 });
     }
 }

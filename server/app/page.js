@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { getMediaDirectory } from '../lib/api';
 
 export default function Home() {
     const [currentPath, setCurrentPath] = useState('');
@@ -10,22 +11,34 @@ export default function Home() {
     const [selectedImage, setSelectedImage] = useState(null);
     const [selectedVideo, setSelectedVideo] = useState(null);
     const [pathHistory, setPathHistory] = useState([]);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [showErrorModal, setShowErrorModal] = useState(false);
+
+    // 全局错误处理函数
+    const showError = (message) => {
+        setErrorMessage(message);
+        setShowErrorModal(true);
+    };
+
+    // 关闭错误弹窗
+    const closeErrorModal = () => {
+        setShowErrorModal(false);
+        setErrorMessage('');
+    };
 
     // 加载目录内容
     const loadDirectory = async (path = '') => {
         setLoading(true);
         try {
-            const response = await fetch(`/api/media?folder=${encodeURIComponent(path)}`);
-            const data = await response.json();
+            const result = await getMediaDirectory(path);
 
-            if (response.ok) {
-                setCurrentPath(data.currentPath);
-                setItems(data.items);
-            } else {
-                console.error('Error loading directory:', data.error);
+            if (result.success) {
+                setCurrentPath(result.data.currentPath);
+                setItems(result.data.items);
             }
         } catch (error) {
             console.error('Error loading directory:', error);
+            showError(error.message);
         } finally {
             setLoading(false);
         }
@@ -245,6 +258,52 @@ export default function Home() {
                             className="max-w-full max-h-full"
                             onClick={(e) => e.stopPropagation()}
                         />
+                    </div>
+                </div>
+            )}
+
+            {/* 错误弹窗模态框 */}
+            {showErrorModal && (
+                <div className="fixed top-4 right-4 z-50 max-w-md w-auto">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 p-6 animate-slide-in-right">
+                        {/* 错误图标和关闭按钮 */}
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center">
+                                <div className="flex-shrink-0">
+                                    <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
+                                </div>
+                                <h3 className="ml-2 text-sm font-medium text-gray-900 dark:text-white">
+                                    错误提示
+                                </h3>
+                            </div>
+                            <button
+                                onClick={closeErrorModal}
+                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* 错误信息 */}
+                        <div className="mb-4">
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                                {errorMessage}
+                            </p>
+                        </div>
+
+                        {/* 按钮 */}
+                        <div className="flex justify-end">
+                            <button
+                                onClick={closeErrorModal}
+                                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                            >
+                                确定
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

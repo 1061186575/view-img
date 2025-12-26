@@ -59,9 +59,42 @@ The development server runs on http://localhost:3000 by default.
 - **ESLint**: Configured with Next.js core web vitals rules
 - **Build Output**: Excludes `.next/`, `out/`, `build/` directories
 
-## Current State
+## API Response Format
 
-This appears to be a fresh Next.js project with minimal customization beyond the initial template. The main page still contains starter content, and there's a basic test page demonstrating Tailwind classes.
+All API responses use standard HTTP status codes:
+
+```javascript
+// 成功响应 (200 OK)
+{
+  currentPath: "...",
+  items: [...]
+}
+
+// 错误响应 (400/404/500)
+{
+  error: "错误信息"
+}
+```
+
+**Error Handling**: The frontend checks HTTP status codes (`response.ok`). When status is not 200, a non-intrusive error notification appears in the top-right corner without blocking the UI.
+
+## Media Management
+
+- **Media Directory**: `public/media/` serves as the root directory for images and videos
+- **Supported Formats**:
+  - Images: JPG, PNG, GIF, WebP, SVG, BMP
+  - Videos: MP4, WebM, OGG, AVI, MOV, WMV, FLV, MKV
+- **Folder Navigation**: Supports unlimited nested folder structures
+- **File Filtering**: Non-media files are automatically ignored
+
+## Features
+
+- **Responsive Grid Layout**: Auto-adjusts for mobile (2 cols) to desktop (8 cols)
+- **Image Preview**: Click to view full-size images in modal
+- **Video Playback**: Click to play videos with native controls
+- **Folder Navigation**: Browse nested directories with breadcrumb navigation
+- **Non-intrusive Error Handling**: Slide-in notifications in top-right corner without blocking content
+- **Mobile Optimization**: Touch-friendly interface with optimized controls
 
 ## Notes for Development
 
@@ -70,3 +103,4 @@ This appears to be a fresh Next.js project with minimal customization beyond the
 - All pages are in the `app/` directory following Next.js 13+ conventions
 - Static assets are served from the `public/` directory
 - The layout includes proper font optimization with Geist fonts
+- API utilities are in `lib/api.js` for consistent error handling
