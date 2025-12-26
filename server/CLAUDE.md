@@ -45,6 +45,8 @@ The development server runs on http://localhost:3000 by default.
 │   ├── media/page.js      # Media browser with URL synchronization
 │   ├── api/media/route.js # API endpoint for directory listing
 │   └── globals.css        # Global styles with animations
+├── components/            # Reusable React components
+│   └── VideoThumbnail.js # Video first frame thumbnail generator
 ├── lib/                   # Utility functions
 │   └── api.js            # API request helpers with error handling
 ├── public/               # Static assets and media files
@@ -110,6 +112,7 @@ All API responses use standard HTTP status codes:
   - Touch pinch-to-zoom on mobile devices
   - Pan/drag support when zoomed
   - Smooth animations and transitions
+- **Smart Video Thumbnails**: Automatically generates thumbnails from video first frames
 - **Video Playback**: Click to play videos with native controls
 - **Non-intrusive Error Handling**: Slide-in notifications in top-right corner without blocking content
 - **Mobile Optimization**: Touch-friendly interface with optimized controls

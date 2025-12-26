@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
 import { getMediaDirectory } from '@/lib/api';
+import VideoThumbnail from '../../components/VideoThumbnail';
 
 export default function MediaPage() {
     const router = useRouter();
@@ -17,6 +18,8 @@ export default function MediaPage() {
     const [selectedVideo, setSelectedVideo] = useState(null);
     const [errorMessage, setErrorMessage] = useState('');
     const [showErrorModal, setShowErrorModal] = useState(false);
+    const autoLoadVideo = true;
+    // const autoLoadVideo = false;
 
     // 全局错误处理函数
     const showError = (message) => {
@@ -225,31 +228,23 @@ export default function MediaPage() {
                                             }}
                                         >
                                             <div className="aspect-square relative">
-                                                {item.type === 'folder' ? (
-                                                    /* 文件夹图标 */
-                                                    <div className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
-                                                        <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-                                                            <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
-                                                        </svg>
-                                                    </div>
-                                                ) : (
-                                                    /* 视频缩略图 */
-                                                    <div className="relative h-full">
-                                                        <video
-                                                            className="w-full h-full object-cover"
-                                                            preload="metadata"
-                                                            muted
-                                                        >
-                                                            <source src={item.url} />
-                                                        </video>
-                                                        {/* 播放按钮覆盖层 */}
-                                                        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                                                            <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                                                <path d="M8 5v14l11-7z"/>
+                                                {item.type === 'folder' ?
+                                                    (
+                                                        /* 文件夹图标 */
+                                                        <div
+                                                            className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
+                                                            <svg className="w-12 h-12 text-blue-600 dark:text-blue-400"
+                                                                 fill="currentColor" viewBox="0 0 24 24">
+                                                                <path
+                                                                    d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
                                                             </svg>
                                                         </div>
-                                                    </div>
-                                                )}
+                                                    ) :
+                                                    <VideoThumbnail
+                                                        autoLoadVideo={autoLoadVideo}
+                                                        src={item.url}
+                                                    />
+                                                }
                                             </div>
                                             {/* 文件信息 */}
                                             <div className="p-3">
