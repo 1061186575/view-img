@@ -132,7 +132,7 @@ export default function MediaPage() {
 
     const handleAudioClick = (audioName) => {
         const path = searchParams.get('path') || '';
-        location.href = `/media/audio?audioName=${audioName}&path=${path}`
+        router.push(`/media/audio?audioName=${audioName}&path=${path}`)
     };
 
 

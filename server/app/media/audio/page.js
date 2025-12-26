@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import 'react-photo-view/dist/react-photo-view.css';
 import { getMediaDirectory } from '@/lib/api';
 
 export default function AudioPage() {
-
+    const router = useRouter();
     const searchParams = useSearchParams();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -59,7 +59,7 @@ export default function AudioPage() {
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <button
                     onClick={() => {
-                        history.back()
+                        router.push('/media?path=' + searchParams.get('path') || '')
                     }}
                     className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer"
                 >
