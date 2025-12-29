@@ -248,30 +248,38 @@ export default function AudioPlayer({
                 <div className="mb-4">
                     <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
                         <span>{formatTime(currentTime)}</span>
-                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div
-                                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                                style={{ width: duration ? `${(currentTime / duration) * 100}%` : '0%' }}
-                            />
-                        </div>
+                        <span className="flex-1 text-center">{currentItem.name}</span>
                         <span>{formatTime(duration)}</span>
                     </div>
 
-                    {/* 可点击的进度条 */}
-                    <input
-                        type="range"
-                        min="0"
-                        max={duration || 0}
-                        value={currentTime}
-                        onChange={(e) => {
-                            const audio = audioRef.current;
-                            if (audio) {
-                                audio.currentTime = e.target.value;
-                                setCurrentTime(e.target.value);
-                            }
-                        }}
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                    />
+                    {/* 交互式进度条 */}
+                    <div className="relative">
+                        <input
+                            type="range"
+                            min="0"
+                            max={duration || 0}
+                            value={currentTime}
+                            onChange={(e) => {
+                                const audio = audioRef.current;
+                                if (audio) {
+                                    audio.currentTime = e.target.value;
+                                    setCurrentTime(parseFloat(e.target.value));
+                                }
+                            }}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700
+                                     [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                                     [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500
+                                     [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md
+                                     [&::-webkit-slider-thumb]:hover:bg-blue-600 [&::-webkit-slider-thumb]:transition-colors
+                                     [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full
+                                     [&::-moz-range-thumb]:bg-blue-500 [&::-moz-range-thumb]:cursor-pointer
+                                     [&::-moz-range-thumb]:border-none [&::-moz-range-thumb]:shadow-md
+                                     hover:[&::-moz-range-thumb]:bg-blue-600"
+                            style={{
+                                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${duration ? (currentTime / duration) * 100 : 0}%, #e5e7eb ${duration ? (currentTime / duration) * 100 : 0}%, #e5e7eb 100%)`
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
 
