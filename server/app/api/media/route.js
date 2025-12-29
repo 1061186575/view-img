@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-
-// 支持的图片和视频文件扩展名
-const SUPPORTED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'];
-const SUPPORTED_VIDEO_EXTENSIONS = ['.mp4', '.webm', '.ogg', '.avi', '.mov', '.wmv', '.flv', '.mkv'];
-const SUPPORTED_AUDIO_EXTENSIONS = ['.mp3', '.wav', '.flac', '.aac', '.ogg', '.m4a', '.wma', '.opus'];
+import {
+    SupportedTypes,
+    SUPPORTED_IMAGE_EXTENSIONS,
+    SUPPORTED_VIDEO_EXTENSIONS,
+    SUPPORTED_AUDIO_EXTENSIONS,
+} from "@/app/media/const";
 
 export async function GET(request) {
     try {
@@ -43,7 +44,7 @@ export async function GET(request) {
                 // 添加文件夹
                 result.push({
                     name: item,
-                    type: 'folder',
+                    type: SupportedTypes.folder,
                     path: folder ? `${folder}/${item}` : item,
                     mtime: stats.mtime.getTime(), // 修改时间
                     birthtime: stats.birthtime.getTime() // 创建时间
@@ -63,19 +64,19 @@ export async function GET(request) {
                 if (SUPPORTED_IMAGE_EXTENSIONS.includes(ext)) {
                     // 添加图片
                     result.push({
-                        type: 'image',
+                        type: SupportedTypes.image,
                         ...baseInfo,
                     });
                 } else if (SUPPORTED_VIDEO_EXTENSIONS.includes(ext)) {
                     // 添加视频
                     result.push({
-                        type: 'video',
+                        type: SupportedTypes.video,
                         ...baseInfo,
                     });
                 } else if (SUPPORTED_AUDIO_EXTENSIONS.includes(ext)) {
                     // 添加音频
                     result.push({
-                        type: 'audio',
+                        type: SupportedTypes.audio,
                         ...baseInfo,
                     });
                 }
@@ -85,9 +86,10 @@ export async function GET(request) {
 
         // 排序：文件夹优先，然后按更新时间优先，最后按创建时间优先
         result.sort((a, b) => {
+            const folderType = SupportedTypes.folder;
             // 1. 文件夹优先
-            if (a.type === 'folder' && b.type !== 'folder') return -1;
-            if (a.type !== 'folder' && b.type === 'folder') return 1;
+            if (a.type === folderType && b.type !== folderType) return -1;
+            if (a.type !== folderType && b.type === folderType) return 1;
 
             // 2. 按更新时间排序（新的在前）
             const mtimeDiff = b.mtime - a.mtime;

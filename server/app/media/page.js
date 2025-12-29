@@ -10,6 +10,7 @@ import VideoThumbnail from '../../components/VideoThumbnail';
 import { checkIsPC, formatFileSize, formatShortTime, generateBreadcrumbs, getParentPath } from '@/utils';
 import { useToastContext } from "@/context/ToastContext";
 import { getLocation } from "@/app/utils";
+import { SupportedTypes } from "@/app/media/const";
 
 export default function MediaPage() {
     const { showError } = useToastContext();
@@ -124,6 +125,19 @@ export default function MediaPage() {
         router.push(`/media/audio?audioName=${audioName}&path=${path}`)
     };
 
+    const clickItem = (item) => {
+        if (item.type === SupportedTypes.folder) {
+            handleFolderClick(item.path);
+        } else if (item.type === SupportedTypes.image) {
+            console.log('click image');
+        } else if (item.type === SupportedTypes.video) {
+            handleVideoClick(item.url);
+        } else if (item.type === SupportedTypes.audio) {
+            handleAudioClick(item.name);
+        } else {
+            showError('不支持的文件类型');
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -212,102 +226,72 @@ export default function MediaPage() {
                         <div
                             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
                             {items.map((item, index) => (
-                                <div key={index}>
-                                    {item.type === 'image' ? (
-                                        /* 图片项目 - 使用PhotoView包装 */
-                                        <PhotoView src={item.url}>
-                                            <div
-                                                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
-                                                <div className="aspect-square relative">
-                                                    <Image
-                                                        src={item.url}
-                                                        alt={item.name}
-                                                        fill
-                                                        className="object-cover"
-                                                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 16vw, 12vw"
-                                                    />
-                                                </div>
-                                                {/* 文件信息 */}
-                                                <div className="p-3">
-                                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                                        {item.name}
-                                                    </p>
-                                                    <div className="flex justify-between items-center mt-1">
-                                                        {item.size && (
-                                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                                {formatFileSize(item.size)}
-                                                            </p>
-                                                        )}
-                                                        {item.mtime && (
-                                                            <p className="text-xs text-gray-400 dark:text-gray-500">
-                                                                {formatShortTime(item.mtime)}
-                                                            </p>
-                                                        )}
+                                <div key={index}
+                                     className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
+                                     onClick={() => clickItem(item)}
+                                >
+                                    <div className="aspect-square relative">
+                                        {item.type === SupportedTypes.folder && <div
+                                            className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
+                                            <svg className="w-12 h-12 text-blue-600 dark:text-blue-400"
+                                                 fill="currentColor" viewBox="0 0 24 24">
+                                                <path
+                                                    d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
+                                            </svg>
+                                        </div>}
+                                        {item.type === SupportedTypes.image && (
+                                            /* 图片项目 - 使用PhotoView包装 */
+                                            <PhotoView src={item.url}>
+                                                <div
+                                                    className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
+                                                    <div className="aspect-square relative">
+                                                        <Image
+                                                            src={item.url}
+                                                            alt={item.name}
+                                                            fill
+                                                            className="object-cover"
+                                                            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 16vw, 12vw"
+                                                        />
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </PhotoView>
-                                    ) : (
-                                        /* 非图片项目 - 普通处理 */
-                                        <div
-                                            className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
-                                            onClick={() => {
-                                                if (item.type === 'folder') {
-                                                    handleFolderClick(item.path);
-                                                } else if (item.type === 'video') {
-                                                    handleVideoClick(item.url);
-                                                } else if (item.type === 'audio') {
-                                                    handleAudioClick(item.name);
-                                                } else {
-                                                    alert('未知类型')
-                                                }
-                                            }}
-                                        >
-                                            <div className="aspect-square relative">
-                                                {item.type === 'folder' ?
-                                                    (
-                                                        /* 文件夹图标 */
-                                                        <div
-                                                            className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
-                                                            <svg className="w-12 h-12 text-blue-600 dark:text-blue-400"
-                                                                 fill="currentColor" viewBox="0 0 24 24">
-                                                                <path
-                                                                    d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
-                                                            </svg>
-                                                        </div>
-                                                    ) : (
-                                                        item.type === 'video' ?
-                                                            <VideoThumbnail
-                                                                autoLoadVideo={autoLoadVideo}
-                                                                src={item.url}
-                                                            /> :
-                                                            <div
-                                                                className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
-                                                                音乐
-                                                            </div>
-                                                    )
-                                                }
-                                            </div>
-                                            {/* 文件信息 */}
-                                            <div className="p-3">
-                                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                                    {item.name}
+                                            </PhotoView>
+                                        )}
+                                        {item.type === SupportedTypes.video && <VideoThumbnail
+                                            autoLoadVideo={autoLoadVideo}
+                                            src={item.url}
+                                        />}
+                                        {item.type === SupportedTypes.audio && <div
+                                            className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100"
+                                                 height="100">
+                                                <path
+                                                    d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"
+                                                    fill="currentColor"/>
+                                            </svg>
+                                        </div>}
+                                        {!Object.values(SupportedTypes).includes(item.type) && <div
+                                            className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
+                                            Unknown
+                                        </div>}
+                                    </div>
+                                    {/* 文件信息 */}
+                                    <div className="p-3">
+                                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                            {item.name}
+                                        </p>
+                                        <div className="flex justify-between items-center mt-1">
+                                            {item.size && (
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                    {formatFileSize(item.size)}
                                                 </p>
-                                                <div className="flex justify-between items-center mt-1">
-                                                    {item.size && (
-                                                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                            {formatFileSize(item.size)}
-                                                        </p>
-                                                    )}
-                                                    {item.mtime && (
-                                                        <p className="text-xs text-gray-400 dark:text-gray-500">
-                                                            {formatShortTime(item.mtime)}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
+                                            )}
+                                            {item.mtime && (
+                                                <p className="text-xs text-gray-400 dark:text-gray-500">
+                                                    {formatShortTime(item.mtime)}
+                                                </p>
+                                            )}
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                             ))}
                         </div>
