@@ -65,3 +65,34 @@ video {
 .animate-slide-in-right {
     animation: slide-in-right 0.3s ease-out;
 }
+
+/* Toast 动画 */
+@keyframes slide-in-down {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fade-out {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+.animate-slide-in-down {
+    animation: slide-in-down 0.3s ease-out;
+}
+
+.animate-fade-out {
+    animation: fade-out 0.2s ease-in forwards;
+}

@@ -8,8 +8,10 @@ import 'react-photo-view/dist/react-photo-view.css';
 import { getMediaDirectory } from '@/lib/api';
 import VideoThumbnail from '../../components/VideoThumbnail';
 import { checkIsPC, formatFileSize, formatShortTime, generateBreadcrumbs, getParentPath } from '@/utils';
+import { useToastContext } from "@/context/ToastContext";
 
 export default function MediaPage() {
+    const Toast = useToastContext();
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -62,6 +64,7 @@ export default function MediaPage() {
         } catch (error) {
             console.error('Error loading directory:', error);
             showError(error.message);
+            Toast.showError(error.message);
         } finally {
             setLoading(false);
         }
