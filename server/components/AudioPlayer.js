@@ -236,6 +236,7 @@ export default function AudioPlayer({
                 ref={audioRef}
                 src={currentItem.url}
                 preload="metadata"
+                autoPlay={true}
             />
 
             {/* 当前播放信息 */}
