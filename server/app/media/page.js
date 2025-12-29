@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
@@ -9,11 +9,12 @@ import { getMediaDirectory } from '@/lib/api';
 import VideoThumbnail from '../../components/VideoThumbnail';
 import { checkIsPC, formatFileSize, formatShortTime, generateBreadcrumbs, getParentPath } from '@/utils';
 import { useToastContext } from "@/context/ToastContext";
+import { getLocation } from "@/app/utils";
 
 export default function MediaPage() {
     const { showError } = useToastContext();
     const router = useRouter();
-    const searchParams = useSearchParams();
+    const searchParams = new URLSearchParams(getLocation().search);
 
     const [currentPath, setCurrentPath] = useState('');
     const [items, setItems] = useState([]);

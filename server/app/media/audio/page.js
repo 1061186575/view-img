@@ -1,14 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { getMediaDirectory } from '@/lib/api';
 import AudioPlayer from '@/components/AudioPlayer';
 import AudioPlaylist from '@/components/AudioPlaylist';
+import { getLocation } from "@/app/utils";
 
 export default function AudioPage() {
     const router = useRouter();
-    const searchParams = useSearchParams();
+    const searchParams = new URLSearchParams(getLocation().search);
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentItem, setCurrentItem] = useState({});
