@@ -320,7 +320,7 @@ export default function MediaPage() {
             {/* 视频播放模态框 */}
             {selectedVideo && (
                 <div
-                    className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
+                    className="fixed inset-0 bg-opacity-90 flex items-center justify-center z-50 p-4"
                     onClick={() => setSelectedVideo(null)}
                 >
                     <div className="relative max-w-full max-h-full">
