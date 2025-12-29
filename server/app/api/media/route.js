@@ -5,7 +5,7 @@ import path from 'path';
 // 支持的图片和视频文件扩展名
 const SUPPORTED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'];
 const SUPPORTED_VIDEO_EXTENSIONS = ['.mp4', '.webm', '.ogg', '.avi', '.mov', '.wmv', '.flv', '.mkv'];
-const SUPPORTED_AUDIO_EXTENSIONS = ['.mp3'];
+const SUPPORTED_AUDIO_EXTENSIONS = ['.mp3', '.wav', '.flac', '.aac', '.ogg', '.m4a', '.wma', '.opus'];
 
 export async function GET(request) {
     try {

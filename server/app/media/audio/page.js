@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import 'react-photo-view/dist/react-photo-view.css';
 import { getMediaDirectory } from '@/lib/api';
+import AudioPlayer from '@/components/AudioPlayer';
+import AudioPlaylist from '@/components/AudioPlaylist';
 
 export default function AudioPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [curPlayItem, setCurPlayItem] = useState({});
+    const [currentItem, setCurrentItem] = useState({});
+    const [currentPath, setCurrentPath] = useState('');
 
     // 加载目录内容
     const loadDirectory = async (path = '') => {
@@ -19,12 +21,20 @@ export default function AudioPage() {
             const result = await getMediaDirectory(path);
 
             if (result.success) {
-                const items = result.data.items.filter(item => item.type === 'audio')
-                setItems(items);
+                const audioItems = result.data.items.filter(item => item.type === 'audio');
+                setItems(audioItems);
+                setCurrentPath(result.data.currentPath);
 
+                // 从URL获取要播放的音频文件名
                 const audioName = searchParams.get('audioName') || '';
-                const curItem = items.find(item => item.name === audioName) || {}
-                setCurPlayItem(curItem)
+                const targetItem = audioItems.find(item => item.name === audioName);
+
+                if (targetItem) {
+                    setCurrentItem(targetItem);
+                } else if (audioItems.length > 0) {
+                    // 如果没有指定音频或找不到指定音频，默认选择第一个
+                    setCurrentItem(audioItems[0]);
+                }
             }
         } catch (error) {
             console.error('Error loading directory:', error);
@@ -39,62 +49,151 @@ export default function AudioPage() {
         loadDirectory(path);
     }, []);
 
+    // 处理播放项改变
+    const handleCurrentItemChange = (item) => {
+        setCurrentItem(item);
+        // 更新URL以反映当前播放的音频
+        const path = searchParams.get('path') || '';
+        router.replace(`/media/audio?path=${path}&audioName=${encodeURIComponent(item.name)}`, { scroll: false });
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p className="text-gray-600 dark:text-gray-300">加载音频文件中...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
             {/* 头部导航 */}
-            <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+            <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
-                        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                            媒体预览器
-                        </h1>
+                        <div className="flex items-center space-x-4">
+                            <button
+                                onClick={() => {
+                                    const path = searchParams.get('path') || '';
+                                    router.push(`/media?path=${path}`);
+                                }}
+                                className="inline-flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+                            >
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                                </svg>
+                                返回
+                            </button>
 
+                            <div className="flex items-center space-x-2">
+                                <svg className="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M18 3a1 1 0 00-1.447-.894L8.763 6H5a3 3 0 000 6h.28l1.771 5.316A1 1 0 008 18h1a1 1 0 001-1v-4.382l6.553 3.276A1 1 0 0018 15V3z" clipRule="evenodd"/>
+                                </svg>
+                                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                                    音频播放器
+                                </h1>
+                            </div>
+                        </div>
 
+                        {/* 路径面包屑 */}
+                        {currentPath && (
+                            <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"/>
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h0a2 2 0 012 2v0"/>
+                                </svg>
+                                <span>/{currentPath}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </header>
 
             {/* 主内容区域 */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                <button
-                    onClick={() => {
-                        router.push('/media?path=' + searchParams.get('path') || '')
-                    }}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer"
-                >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                              d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    返回上级
-                </button>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* 播放列表 */}
+                    <div className="lg:col-span-1">
+                        <AudioPlaylist
+                            items={items}
+                            currentItem={currentItem}
+                            onItemSelect={handleCurrentItemChange}
+                        />
+                    </div>
 
-                {/*播放列表*/}
-                <div style={{}}>
-                    {items.map(item => {
-                        return (
-                            <div key={item.name} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                                <button
-                                    className="text-lg font-semibold text-gray-900 dark:text-white mb-2 cursor-pointer"
-                                    onClick={() => {
-                                        setCurPlayItem(item)
-                                    }}>
-                                    {item.name}
-                                </button>
+                    {/* 音频播放器 */}
+                    <div className="lg:col-span-2">
+                        <AudioPlayer
+                            items={items}
+                            currentItem={currentItem}
+                            onCurrentItemChange={handleCurrentItemChange}
+                        />
+
+                        {/* 音频信息面板 */}
+                        {currentItem.name && (
+                            <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                                    文件信息
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span className="font-medium text-gray-600 dark:text-gray-400">文件名：</span>
+                                        <span className="text-gray-900 dark:text-white ml-2">{currentItem.name}</span>
+                                    </div>
+                                    <div>
+                                        <span className="font-medium text-gray-600 dark:text-gray-400">文件大小：</span>
+                                        <span className="text-gray-900 dark:text-white ml-2">
+                                            {currentItem.size ? (() => {
+                                                const bytes = currentItem.size;
+                                                if (bytes === 0) return '0 Bytes';
+                                                const k = 1024;
+                                                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                                                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                                                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+                                            })() : '未知'}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="font-medium text-gray-600 dark:text-gray-400">文件路径：</span>
+                                        <span className="text-gray-900 dark:text-white ml-2">{currentItem.path || '/'}</span>
+                                    </div>
+                                    <div>
+                                        <span className="font-medium text-gray-600 dark:text-gray-400">访问链接：</span>
+                                        <a
+                                            href={currentItem.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 ml-2 break-all"
+                                        >
+                                            {currentItem.url}
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
-                        )
-                    })}
+                        )}
+                    </div>
                 </div>
 
-                {/*当前播放项*/}
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                        当前播放项: {curPlayItem.name}
-                    </h2>
-                    <audio controls className="w-full" src={curPlayItem.url}>
-                    </audio>
-                </div>
+                {/* 没有音频文件时的提示 */}
+                {!loading && items.length === 0 && (
+                    <div className="text-center py-12">
+                        <svg className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 3a1 1 0 00-1.447-.894L8.763 6H5a3 3 0 000 6h.28l1.771 5.316A1 1 0 008 18h1a1 1 0 001-1v-4.382l6.553 3.276A1 1 0 0018 15V3z" clipRule="evenodd"/>
+                        </svg>
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                            没有找到音频文件
+                        </h3>
+                        <p className="text-gray-500 dark:text-gray-400 mb-6">
+                            在当前目录中没有发现任何支持的音频格式文件
+                        </p>
+                        <p className="text-sm text-gray-400 dark:text-gray-500">
+                            支持的格式：MP3, WAV, FLAC, AAC, OGG, M4A, WMA, OPUS
+                        </p>
+                    </div>
+                )}
             </main>
         </div>
     );
