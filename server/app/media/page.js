@@ -9,7 +9,7 @@ import { getMediaDirectory } from '@/lib/api';
 import VideoThumbnail from '../../components/VideoThumbnail';
 import { checkIsPC, formatFileSize, formatShortTime, generateBreadcrumbs, getParentPath } from '@/utils';
 import { useToastContext } from "@/context/ToastContext";
-import { getLocation } from "@/app/utils";
+import { getLocation } from "@/utils";
 import { SupportedTypes } from "@/app/media/const";
 
 export default function MediaPage() {

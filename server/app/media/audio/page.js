@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getMediaDirectory } from '@/lib/api';
 import AudioPlayer from '@/components/AudioPlayer';
 import AudioPlaylist from '@/components/AudioPlaylist';
-import { getLocation } from "@/app/utils";
+import { getLocation } from "@/utils";
 
 export default function AudioPage() {
     const router = useRouter();
