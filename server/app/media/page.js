@@ -11,7 +11,7 @@ import { checkIsPC, formatFileSize, formatShortTime, generateBreadcrumbs, getPar
 import { useToastContext } from "@/context/ToastContext";
 
 export default function MediaPage() {
-    const Toast = useToastContext();
+    const { showError } = useToastContext();
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -19,24 +19,10 @@ export default function MediaPage() {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedVideo, setSelectedVideo] = useState(null);
-    const [errorMessage, setErrorMessage] = useState('');
-    const [showErrorModal, setShowErrorModal] = useState(false);
     const [pathInput, setPathInput] = useState('');
     const [isPC, setIsPC] = useState(false);
     const autoLoadVideo = true;
     // const autoLoadVideo = false;
-
-    // 全局错误处理函数
-    const showError = (message) => {
-        setErrorMessage(message);
-        setShowErrorModal(true);
-    };
-
-    // 关闭错误弹窗
-    const closeErrorModal = () => {
-        setShowErrorModal(false);
-        setErrorMessage('');
-    };
 
     // 更新URL路径
     const updateURL = (path) => {
@@ -64,7 +50,6 @@ export default function MediaPage() {
         } catch (error) {
             console.error('Error loading directory:', error);
             showError(error.message);
-            Toast.showError(error.message);
         } finally {
             setLoading(false);
         }
@@ -184,7 +169,8 @@ export default function MediaPage() {
                             className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors cursor-pointer"
                         >
                             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                      d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                             </svg>
                             返回上级
                         </button>
@@ -222,13 +208,15 @@ export default function MediaPage() {
                         speed={() => 200}
                         easing={(type) => (type === 2 ? 'cubic-bezier(0.36, 0, 0.66, -0.56)' : 'cubic-bezier(0.34, 1.56, 0.64, 1)')}
                     >
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                        <div
+                            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
                             {items.map((item, index) => (
                                 <div key={index}>
                                     {item.type === 'image' ? (
                                         /* 图片项目 - 使用PhotoView包装 */
                                         <PhotoView src={item.url}>
-                                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
+                                            <div
+                                                className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden">
                                                 <div className="aspect-square relative">
                                                     <Image
                                                         src={item.url}
@@ -292,8 +280,9 @@ export default function MediaPage() {
                                                                 autoLoadVideo={autoLoadVideo}
                                                                 src={item.url}
                                                             /> :
-                                                            <div className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
-                                                               音乐
+                                                            <div
+                                                                className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
+                                                                音乐
                                                             </div>
                                                     )
                                                 }
@@ -327,8 +316,10 @@ export default function MediaPage() {
                 {/* 空文件夹提示 */}
                 {!loading && items.length === 0 && (
                     <div className="text-center py-20">
-                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
                         </svg>
                         <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
                             暂无媒体文件
@@ -353,7 +344,8 @@ export default function MediaPage() {
                             onClick={() => setSelectedVideo(null)}
                         >
                             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                      d="M6 18L18 6M6 6l12 12"/>
                             </svg>
                         </button>
                         <video
@@ -367,51 +359,6 @@ export default function MediaPage() {
                 </div>
             )}
 
-            {/* 错误弹窗模态框 */}
-            {showErrorModal && (
-                <div className="fixed top-4 right-4 z-50 max-w-md w-auto">
-                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 p-6 animate-slide-in-right">
-                        {/* 错误图标和关闭按钮 */}
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0">
-                                    <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                    </svg>
-                                </div>
-                                <h3 className="ml-2 text-sm font-medium text-gray-900 dark:text-white">
-                                    错误提示
-                                </h3>
-                            </div>
-                            <button
-                                onClick={closeErrorModal}
-                                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        {/* 错误信息 */}
-                        <div className="mb-4">
-                            <p className="text-sm text-gray-600 dark:text-gray-300">
-                                {errorMessage}
-                            </p>
-                        </div>
-
-                        {/* 按钮 */}
-                        <div className="flex justify-end">
-                            <button
-                                onClick={closeErrorModal}
-                                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
-                            >
-                                确定
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
