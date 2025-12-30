@@ -14,6 +14,11 @@ export async function GET(request) {
         const { searchParams } = new URL(request.url);
         const folder = searchParams.get('folder') || '';
 
+        // 分页参数
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '100');
+        const offset = (page - 1) * limit;
+
         // 构建完整路径，确保安全性
         const basePath = path.join(process.cwd(), 'public', mediaPath);
         const fullPath = path.join(basePath, folder);
@@ -103,9 +108,27 @@ export async function GET(request) {
             return a.name.localeCompare(b.name);
         });
 
+        // 计算总数和分页信息
+        const totalItems = result.length;
+        const totalPages = Math.ceil(totalItems / limit);
+        const hasNextPage = page < totalPages;
+        const hasPreviousPage = page > 1;
+
+        // 应用分页
+        const paginatedItems = result.slice(offset, offset + limit);
+
         return NextResponse.json({
             currentPath: folder,
-            items: result
+            items: paginatedItems,
+            pagination: {
+                page,
+                limit,
+                totalItems,
+                totalPages,
+                hasNextPage,
+                hasPreviousPage,
+                currentItemCount: paginatedItems.length
+            }
         });
 
     } catch (error) {

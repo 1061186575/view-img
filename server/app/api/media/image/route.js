@@ -11,6 +11,7 @@ const THUMBNAIL_CONFIG = {
     format: 'jpeg'
 };
 
+// 支持缩略图, 前端+后端缓存
 export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);

@@ -34,6 +34,11 @@ export const apiRequest = async (url, options = {}) => {
 };
 
 // 专门用于媒体API的请求函数
-export const getMediaDirectory = async (folderPath = '') => {
-    return apiRequest(`/api/media?folder=${encodeURIComponent(folderPath)}`);
+export const getMediaDirectory = async (folderPath = '', page = 1, limit = 100) => {
+    const params = new URLSearchParams({
+        folder: folderPath,
+        page: page.toString(),
+        limit: limit.toString()
+    });
+    return apiRequest(`/api/media?${params.toString()}`);
 };

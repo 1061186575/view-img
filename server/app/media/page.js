@@ -24,6 +24,13 @@ export default function MediaPage() {
     const [pathInput, setPathInput] = useState('');
     const [isPC, setIsPC] = useState(false);
     const [settings, setSettings] = useState({ enableThumbnails: true });
+
+    // 分页和滚动加载状态
+    const [currentPage, setCurrentPage] = useState(1);
+    const [hasNextPage, setHasNextPage] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [totalItems, setTotalItems] = useState(0);
+
     const autoLoadVideo = true;
     // const autoLoadVideo = false;
 
@@ -39,15 +46,18 @@ export default function MediaPage() {
         window.history.replaceState({}, '', url);
     };
 
-    // 加载目录内容
+    // 加载目录内容（首次加载）
     const loadDirectory = async (path = '') => {
         setLoading(true);
+        setCurrentPage(1);
         try {
-            const result = await getMediaDirectory(path);
+            const result = await getMediaDirectory(path, 1, 100);
 
             if (result.success) {
                 setCurrentPath(result.data.currentPath);
                 setItems(result.data.items);
+                setHasNextPage(result.data.pagination.hasNextPage);
+                setTotalItems(result.data.pagination.totalItems);
                 updateURL(path);
             }
         } catch (error) {
@@ -55,6 +65,29 @@ export default function MediaPage() {
             showError(error.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // 加载更多内容
+    const loadMoreItems = async () => {
+        if (loadingMore || !hasNextPage) return;
+
+        setLoadingMore(true);
+        const nextPage = currentPage + 1;
+
+        try {
+            const result = await getMediaDirectory(currentPath, nextPage, 100);
+
+            if (result.success) {
+                setItems(prevItems => [...prevItems, ...result.data.items]);
+                setHasNextPage(result.data.pagination.hasNextPage);
+                setCurrentPage(nextPage);
+            }
+        } catch (error) {
+            console.error('Error loading more items:', error);
+            showError(error.message);
+        } finally {
+            setLoadingMore(false);
         }
     };
 
@@ -97,6 +130,25 @@ export default function MediaPage() {
         };
         loadSettings();
     }, []);
+
+    // 滚动加载监听
+    useEffect(() => {
+        const handleScroll = () => {
+            if (loading || loadingMore || !hasNextPage) return;
+
+            const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
+            const clientHeight = document.documentElement.clientHeight || window.innerHeight;
+
+            // 当滚动到距离底部200px时开始加载更多
+            if (scrollTop + clientHeight >= scrollHeight - 200) {
+                loadMoreItems();
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [loading, loadingMore, hasNextPage, loadMoreItems]);
 
     // 处理文件夹点击
     const handleFolderClick = (folderPath) => {
@@ -327,6 +379,37 @@ export default function MediaPage() {
                             ))}
                         </div>
                     </PhotoProvider>
+                )}
+
+                {/* 加载更多提示 */}
+                {!loading && items.length > 0 && (
+                    <div className="mt-8 text-center">
+                        {loadingMore ? (
+                            <div className="flex items-center justify-center py-8">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+                                <span className="text-gray-600 dark:text-gray-300">正在加载更多...</span>
+                            </div>
+                        ) : hasNextPage ? (
+                            <button
+                                onClick={loadMoreItems}
+                                className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                            >
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                          d="M19 13l-7 7-7-7m14-8l-7 7-7-7"/>
+                                </svg>
+                                加载更多
+                            </button>
+                        ) : items.length > 0 ? (
+                            <div className="py-8">
+                                <div className="flex items-center justify-center space-x-4">
+                                    <div className="h-px bg-gray-300 dark:bg-gray-600 flex-1"></div>
+                                    <span className="text-gray-500 dark:text-gray-400 text-sm">已显示全部 {totalItems} 个文件</span>
+                                    <div className="h-px bg-gray-300 dark:bg-gray-600 flex-1"></div>
+                                </div>
+                            </div>
+                        ) : null}
+                    </div>
                 )}
 
                 {/* 空文件夹提示 */}
