@@ -18,6 +18,7 @@ async function ensureDataDir() {
 function getDefaultSettings() {
     return {
         enableThumbnails: true,
+        autoLoadVideo: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
     };
@@ -55,7 +56,7 @@ export async function POST(request) {
         const body = await request.json();
 
         // 验证请求数据
-        if (typeof body.enableThumbnails !== 'boolean') {
+        if (typeof body.enableThumbnails !== 'boolean' || typeof body.autoLoadVideo !== 'boolean') {
             return NextResponse.json(
                 { error: '无效的设置数据' },
                 { status: 400 }
@@ -76,6 +77,8 @@ export async function POST(request) {
             }
         }
 
+        // 不保存前端传的 createdAt
+        delete body.createdAt;
         // 合并设置
         const newSettings = {
             ...existingSettings,

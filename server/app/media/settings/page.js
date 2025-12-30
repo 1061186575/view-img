@@ -10,7 +10,8 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [settings, setSettings] = useState({
-        enableThumbnails: true // 默认开启缩略图
+        enableThumbnails: true, // 默认开启缩略图
+        autoLoadVideo: true // 默认自动加载视频
     });
 
     // 加载设置
@@ -142,6 +143,32 @@ export default function SettingsPage() {
                                     </button>
                                 </div>
                             </div>
+
+                            <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                    <label className="text-sm font-medium text-gray-900 dark:text-white">
+                                        自动加载视频缩略图
+                                    </label>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                        开启后，会用 video 标签提前加载视频内容，关闭后仅在点击时生成，节省带宽
+                                    </p>
+                                </div>
+                                <div className="ml-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSettingChange('autoLoadVideo', !settings.autoLoadVideo)}
+                                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
+                                            settings.autoLoadVideo ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                                        }`}
+                                    >
+                                        <span
+                                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                                settings.autoLoadVideo ? 'translate-x-5' : 'translate-x-0'
+                                            }`}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         {/* 保存按钮 */}
@@ -164,30 +191,6 @@ export default function SettingsPage() {
                                     )}
                                     {saving ? '保存中...' : '保存设置'}
                                 </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 设置说明 */}
-                <div className="mt-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                    <div className="flex">
-                        <div className="flex-shrink-0">
-                            <svg className="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <div className="ml-3">
-                            <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                                关于缩略图功能
-                            </h3>
-                            <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
-                                <ul className="list-disc list-inside space-y-1">
-                                    <li>启用缩略图可以显著提高页面加载速度，特别是在查看大量图片时</li>
-                                    <li>缩略图会自动生成并缓存，首次加载可能会稍慢</li>
-                                    <li>点击缩略图即可查看完整的高清图片</li>
-                                    <li>配置保存后会立即生效，无需重启应用</li>
-                                </ul>
                             </div>
                         </div>
                     </div>

@@ -23,16 +23,16 @@ export default function MediaPage() {
     const [selectedVideo, setSelectedVideo] = useState(null);
     const [pathInput, setPathInput] = useState('');
     const [isPC, setIsPC] = useState(false);
-    const [settings, setSettings] = useState({ enableThumbnails: true });
+    const [settings, setSettings] = useState({
+        enableThumbnails: true,
+        autoLoadVideo: true
+    });
 
     // 分页和滚动加载状态
     const [currentPage, setCurrentPage] = useState(1);
     const [hasNextPage, setHasNextPage] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [totalItems, setTotalItems] = useState(0);
-
-    const autoLoadVideo = true;
-    // const autoLoadVideo = false;
 
     // 更新URL路径
     const updateURL = (path) => {
@@ -340,7 +340,7 @@ export default function MediaPage() {
                                             </PhotoView>
                                         )}
                                         {item.type === SupportedTypes.video && <VideoThumbnail
-                                            autoLoadVideo={autoLoadVideo}
+                                            autoLoadVideo={settings.autoLoadVideo}
                                             src={item.url}
                                         />}
                                         {item.type === SupportedTypes.audio && <div
