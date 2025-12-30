@@ -1,6 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import {
+    PreviousIcon,
+    NextIcon,
+    ShuffleIcon,
+    RepeatIcon,
+    PlayIcon,
+    PauseIcon,
+    VolumeIcon
+} from './icons';
 
 // 播放模式常量
 const PLAY_MODES = {
@@ -30,29 +39,13 @@ export default function AudioPlayer({
     const getModeIcon = (mode) => {
         switch (mode) {
             case PLAY_MODES.SEQUENTIAL:
-                return (
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"/>
-                    </svg>
-                );
+                return <PreviousIcon className="w-5 h-5" />;
             case PLAY_MODES.LOOP:
-                return (
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd"/>
-                    </svg>
-                );
+                return <RepeatIcon className="w-5 h-5" />;
             case PLAY_MODES.RANDOM:
-                return (
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" clipRule="evenodd"/>
-                    </svg>
-                );
+                return <ShuffleIcon className="w-5 h-5" />;
             case PLAY_MODES.SINGLE_LOOP:
-                return (
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 10a8 8 0 018-8v8l4-4-4-4v8a8 8 0 01-8 8z"/>
-                    </svg>
-                );
+                return <RepeatIcon className="w-5 h-5" />;
             default:
                 return null;
         }
@@ -292,9 +285,7 @@ export default function AudioPlayer({
                     disabled={!getPrevTrack()}
                     className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"/>
-                    </svg>
+                    <PreviousIcon className="w-6 h-6" />
                 </button>
 
                 {/* 播放/暂停 */}
@@ -303,13 +294,9 @@ export default function AudioPlayer({
                     className="p-3 rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-colors"
                 >
                     {isPlaying ? (
-                        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd"/>
-                        </svg>
+                        <PauseIcon className="w-8 h-8" />
                     ) : (
-                        <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd"/>
-                        </svg>
+                        <PlayIcon className="w-8 h-8" />
                     )}
                 </button>
 
@@ -319,9 +306,7 @@ export default function AudioPlayer({
                     disabled={!getNextTrack()}
                     className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" transform="rotate(180)">
-                        <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z"/>
-                    </svg>
+                    <NextIcon className="w-6 h-6" />
                 </button>
             </div>
 
@@ -339,10 +324,7 @@ export default function AudioPlayer({
 
                 {/* 音量控制 */}
                 <div className="flex items-center space-x-2">
-                    <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.617.778L4.769 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.769l3.614-3.778a1 1 0 011.617-.146zM7 6.828L5.769 8H3v4h2.769L7 13.172V6.828zM15.95 4.343a1 1 0 00-1.414 1.414 5.5 5.5 0 010 7.778 1 1 0 101.414 1.414 7.5 7.5 0 000-10.606z" clipRule="evenodd"/>
-                        <path d="M13.536 6.757a1 1 0 00-1.414 1.414 1.5 1.5 0 010 2.121 1 1 0 101.414 1.415 3.5 3.5 0 000-4.95z"/>
-                    </svg>
+                    <VolumeIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                     <input
                         type="range"
                         min="0"

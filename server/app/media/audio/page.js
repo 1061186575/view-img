@@ -6,6 +6,7 @@ import { getMediaDirectory } from '@/lib/api';
 import AudioPlayer from '@/components/AudioPlayer';
 import AudioPlaylist from '@/components/AudioPlaylist';
 import { getLocation } from "@/utils";
+import { ArrowLeftIcon, SpeakerIcon, ClipboardIcon } from '@/components/icons';
 
 export default function AudioPage() {
     const router = useRouter();
@@ -83,16 +84,12 @@ export default function AudioPage() {
                                 }}
                                 className="inline-flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
                             >
-                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                                </svg>
+                                <ArrowLeftIcon className="w-4 h-4 mr-2" />
                                 返回
                             </button>
 
                             <div className="flex items-center space-x-2">
-                                <svg className="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M18 3a1 1 0 00-1.447-.894L8.763 6H5a3 3 0 000 6h.28l1.771 5.316A1 1 0 008 18h1a1 1 0 001-1v-4.382l6.553 3.276A1 1 0 0018 15V3z" clipRule="evenodd"/>
-                                </svg>
+                                <SpeakerIcon className="w-6 h-6 text-blue-500" />
                                 <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
                                     音频播放器
                                 </h1>
@@ -102,10 +99,7 @@ export default function AudioPage() {
                         {/* 路径面包屑 */}
                         {currentPath && (
                             <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"/>
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h0a2 2 0 012 2v0"/>
-                                </svg>
+                                <ClipboardIcon className="w-4 h-4" />
                                 <span>/{currentPath}</span>
                             </div>
                         )}
@@ -181,9 +175,7 @@ export default function AudioPage() {
                 {/* 没有音频文件时的提示 */}
                 {!loading && items.length === 0 && (
                     <div className="text-center py-12">
-                        <svg className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 3a1 1 0 00-1.447-.894L8.763 6H5a3 3 0 000 6h.28l1.771 5.316A1 1 0 008 18h1a1 1 0 001-1v-4.382l6.553 3.276A1 1 0 0018 15V3z" clipRule="evenodd"/>
-                        </svg>
+                        <SpeakerIcon className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
                         <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                             没有找到音频文件
                         </h3>

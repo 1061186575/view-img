@@ -1,5 +1,7 @@
 'use client';
 
+import { PlayIcon, MoreIcon } from './icons';
+
 export default function AudioPlaylist({
     items = [],
     currentItem = {},
@@ -62,9 +64,7 @@ export default function AudioPlaylist({
                             <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
                                 {isCurrentItem ? (
                                     <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd"/>
-                                        </svg>
+                                        <PlayIcon className="w-3 h-3 text-white" />
                                     </div>
                                 ) : (
                                     <div className={`
@@ -72,9 +72,7 @@ export default function AudioPlaylist({
                                         flex items-center justify-center text-gray-400 dark:text-gray-500
                                         group-hover:border-blue-400 group-hover:text-blue-400 transition-colors
                                     `}>
-                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd"/>
-                                        </svg>
+                                        <PlayIcon className="w-3 h-3" />
                                     </div>
                                 )}
                             </div>
@@ -115,9 +113,7 @@ export default function AudioPlaylist({
                                         ${isCurrentItem ? 'opacity-100' : ''}
                                     `}
                                 >
-                                    <svg className="w-5 h-5 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
-                                    </svg>
+                                    <MoreIcon className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                                 </button>
                             </div>
                         </div>

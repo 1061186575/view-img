@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { CheckIcon, WarningIcon, InfoIcon, CloseIcon } from './icons';
 
 const Toast = ({ id, message, type = 'error', duration = 3000, onClose }) => {
     useEffect(() => {
@@ -16,30 +17,14 @@ const Toast = ({ id, message, type = 'error', duration = 3000, onClose }) => {
     const getIcon = () => {
         switch (type) {
             case 'success':
-                return (
-                    <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                );
+                return <CheckIcon className="w-5 h-5 text-green-500" />;
             case 'warning':
-                return (
-                    <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                );
+                return <WarningIcon className="w-5 h-5 text-yellow-500" />;
             case 'info':
-                return (
-                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                );
+                return <InfoIcon className="w-5 h-5 text-blue-500" />;
             case 'error':
             default:
-                return (
-                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                );
+                return <WarningIcon className="w-5 h-5 text-red-500" />;
         }
     };
 
@@ -82,9 +67,7 @@ const Toast = ({ id, message, type = 'error', duration = 3000, onClose }) => {
                 onClick={() => onClose(id)}
                 className="ml-4 p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-white/10 dark:hover:bg-black/10 transition-all duration-200"
             >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <CloseIcon className="w-4 h-4" />
             </button>
         </div>
     );
