@@ -18,13 +18,6 @@ export default function Home() {
                             >
                                 媒体库
                             </Link>
-                            <Link
-                                href="/settings"
-                                className="inline-flex items-center p-2 text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                title="设置"
-                            >
-                                <SettingsIcon className="w-5 h-5" />
-                            </Link>
                         </nav>
                     </div>
                 </div>

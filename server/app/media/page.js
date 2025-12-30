@@ -10,7 +10,7 @@ import VideoThumbnail from '../../components/VideoThumbnail';
 import { checkIsPC, formatFileSize, formatShortTime, generateBreadcrumbs, getParentPath } from '@/utils';
 import { useToastContext } from "@/context/ToastContext";
 import { getLocation } from "@/utils";
-import { SupportedTypes } from "@/app/media/const";
+import { pageSize, SupportedTypes } from "@/app/media/const";
 import {
     SettingsIcon,
     ArrowLeftIcon,
@@ -61,7 +61,7 @@ export default function MediaPage() {
         setLoading(true);
         setCurrentPage(1);
         try {
-            const result = await getMediaDirectory(path, 1, 100);
+            const result = await getMediaDirectory(path, 1, pageSize);
 
             if (result.success) {
                 setCurrentPath(result.data.currentPath);
@@ -86,7 +86,7 @@ export default function MediaPage() {
         const nextPage = currentPage + 1;
 
         try {
-            const result = await getMediaDirectory(currentPath, nextPage, 100);
+            const result = await getMediaDirectory(currentPath, nextPage, pageSize);
 
             if (result.success) {
                 setItems(prevItems => [...prevItems, ...result.data.items]);
