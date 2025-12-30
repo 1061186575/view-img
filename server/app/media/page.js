@@ -330,7 +330,7 @@ export default function MediaPage() {
                 {/* 加载状态 */}
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
-                        <LoadingIcon className="h-12 w-12 text-blue-600" />
+                        <LoadingIcon />
                     </div>
                 ) : (
                     /* 文件网格 */
