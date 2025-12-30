@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { PhotoProvider, PhotoView } from 'react-photo-view';
@@ -44,6 +44,11 @@ export default function MediaPage() {
     const [loadingMore, setLoadingMore] = useState(false);
     const [totalItems, setTotalItems] = useState(0);
 
+    // 防重复请求的引用
+    const loadingRef = useRef(false);
+    const loadMoreRef = useRef(false);
+    const scrollTimeoutRef = useRef(null);
+
     // 更新URL路径
     const updateURL = (path) => {
         const url = new URL(window.location);
@@ -57,9 +62,14 @@ export default function MediaPage() {
     };
 
     // 加载目录内容（首次加载）
-    const loadDirectory = async (path = '') => {
+    const loadDirectory = useCallback(async (path = '') => {
+        // 防止重复请求
+        if (loadingRef.current) return;
+
+        loadingRef.current = true;
         setLoading(true);
         setCurrentPage(1);
+
         try {
             const result = await getMediaDirectory(path, 1, pageSize);
 
@@ -74,14 +84,17 @@ export default function MediaPage() {
             console.error('Error loading directory:', error);
             showError(error.message);
         } finally {
+            loadingRef.current = false;
             setLoading(false);
         }
-    };
+    }, [showError]);
 
     // 加载更多内容
-    const loadMoreItems = async () => {
-        if (loadingMore || !hasNextPage) return;
+    const loadMoreItems = useCallback(async () => {
+        // 防止重复请求
+        if (loadMoreRef.current || loadingMore || !hasNextPage) return;
 
+        loadMoreRef.current = true;
         setLoadingMore(true);
         const nextPage = currentPage + 1;
 
@@ -97,9 +110,10 @@ export default function MediaPage() {
             console.error('Error loading more items:', error);
             showError(error.message);
         } finally {
+            loadMoreRef.current = false;
             setLoadingMore(false);
         }
-    };
+    }, [loadingMore, hasNextPage, currentPage, currentPath, showError]);
 
     // 检测是否为PC端
     useEffect(() => {
@@ -141,40 +155,53 @@ export default function MediaPage() {
         loadSettings();
     }, []);
 
-    // 滚动加载监听
+    // 滚动加载监听 - 使用节流优化
     useEffect(() => {
         const handleScroll = () => {
-            if (loading || loadingMore || !hasNextPage) return;
-
-            const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-            const scrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
-            const clientHeight = document.documentElement.clientHeight || window.innerHeight;
-
-            // 当滚动到距离底部200px时开始加载更多
-            if (scrollTop + clientHeight >= scrollHeight - 200) {
-                loadMoreItems();
+            // 清除之前的定时器
+            if (scrollTimeoutRef.current) {
+                clearTimeout(scrollTimeoutRef.current);
             }
+
+            // 使用节流，100ms内只处理一次滚动事件
+            scrollTimeoutRef.current = setTimeout(() => {
+                if (loading || loadingMore || !hasNextPage || loadMoreRef.current) return;
+
+                const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+                const scrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
+                const clientHeight = document.documentElement.clientHeight || window.innerHeight;
+
+                // 当滚动到距离底部200px时开始加载更多
+                if (scrollTop + clientHeight >= scrollHeight - 200) {
+                    loadMoreItems();
+                }
+            }, 100);
         };
 
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            if (scrollTimeoutRef.current) {
+                clearTimeout(scrollTimeoutRef.current);
+            }
+        };
     }, [loading, loadingMore, hasNextPage, loadMoreItems]);
 
     // 处理文件夹点击
-    const handleFolderClick = (folderPath) => {
+    const handleFolderClick = useCallback((folderPath) => {
         loadDirectory(folderPath);
-    };
+    }, [loadDirectory]);
 
     // 返回上一级
-    const handleBackClick = () => {
+    const handleBackClick = useCallback(() => {
         const parentPath = getParentPath(currentPath);
         loadDirectory(parentPath);
-    };
+    }, [currentPath, loadDirectory]);
 
     // 面包屑导航点击
-    const handleBreadcrumbClick = (targetPath) => {
+    const handleBreadcrumbClick = useCallback((targetPath) => {
         loadDirectory(targetPath);
-    };
+    }, [loadDirectory]);
 
     // 处理路径输入
     const handlePathInputChange = (e) => {
@@ -182,17 +209,17 @@ export default function MediaPage() {
     };
 
     // 处理路径输入提交
-    const handlePathInputSubmit = (e) => {
+    const handlePathInputSubmit = useCallback((e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             loadDirectory(pathInput);
         }
-    };
+    }, [pathInput, loadDirectory]);
 
     // 处理跳转按钮点击
-    const handleGoClick = () => {
+    const handleGoClick = useCallback(() => {
         loadDirectory(pathInput);
-    };
+    }, [pathInput, loadDirectory]);
 
 
     // 处理视频点击
