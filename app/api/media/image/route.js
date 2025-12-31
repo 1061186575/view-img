@@ -76,6 +76,7 @@ export async function GET(request) {
             // 生成缩略图
             const imageBuffer = fs.readFileSync(fullPath);
             const thumbnailBuffer = await sharp(imageBuffer)
+                .rotate() // 自动根据 EXIF 方向信息旋转图片
                 .resize(THUMBNAIL_CONFIG.width, THUMBNAIL_CONFIG.height, {
                     fit: 'cover',
                     position: 'center'
