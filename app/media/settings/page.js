@@ -12,7 +12,9 @@ export default function SettingsPage() {
     const [saving, setSaving] = useState(false);
     const [settings, setSettings] = useState({
         enableThumbnails: true, // 默认开启缩略图
-        autoLoadVideo: true // 默认自动加载视频
+        autoLoadVideo: true, // 默认自动加载视频
+        hideName: false,
+        hideFileInfo: false,
     });
 
     // 加载设置
@@ -163,6 +165,40 @@ export default function SettingsPage() {
                                         <span
                                             className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
                                                 settings.autoLoadVideo ? 'translate-x-5' : 'translate-x-0'
+                                            }`}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* 分割线 */}
+                            <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                                <h3 className="text-base font-medium text-gray-900 dark:text-white mb-4">
+                                    信息隐藏设置
+                                </h3>
+                            </div>
+
+                            {/* 隐藏文件信息 */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                    <label className="text-sm font-medium text-gray-900 dark:text-white">
+                                        隐藏文件信息
+                                    </label>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                        不显示文件的名称/修改时间/大小
+                                    </p>
+                                </div>
+                                <div className="ml-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSettingChange('hideFileInfo', !settings.hideFileInfo)}
+                                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
+                                            settings.hideFileInfo ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                                        }`}
+                                    >
+                                        <span
+                                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                                settings.hideFileInfo ? 'translate-x-5' : 'translate-x-0'
                                             }`}
                                         />
                                     </button>

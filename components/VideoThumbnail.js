@@ -7,11 +7,9 @@ const VideoThumbnail = ({ src, autoLoadVideo }) => {
     if (autoLoadVideo) {
         return  <div className="relative h-full">
             <video
+                src={src}
                 className="w-full h-full object-cover"
-                preload="metadata"
-                muted
             >
-                <source src={src}/>
             </video>
             {/* 播放按钮覆盖层 */}
             <div

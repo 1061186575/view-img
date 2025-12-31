@@ -35,7 +35,8 @@ export default function MediaPage() {
     const [isPC, setIsPC] = useState(false);
     const [settings, setSettings] = useState({
         enableThumbnails: true,
-        autoLoadVideo: true
+        autoLoadVideo: true,
+        hideFileInfo: false
     });
 
     // 分页和滚动加载状态
@@ -347,8 +348,9 @@ export default function MediaPage() {
                                 >
                                     <div className="aspect-square relative">
                                         {item.type === SupportedTypes.folder && <div
-                                            className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
+                                            className="flex flex-col items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
                                             <FolderIcon className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+                                            {settings.hideFileInfo && item.name}
                                         </div>}
                                         {item.type === SupportedTypes.image && (
                                             /* 图片项目 - 使用PhotoView包装 */
@@ -364,10 +366,12 @@ export default function MediaPage() {
                                                 />
                                             </PhotoView>
                                         )}
-                                        {item.type === SupportedTypes.video && <VideoThumbnail
-                                            autoLoadVideo={settings.autoLoadVideo}
-                                            src={item.url}
-                                        />}
+                                        {item.type === SupportedTypes.video && (
+                                            <VideoThumbnail
+                                                autoLoadVideo={settings.autoLoadVideo}
+                                                src={item.url}
+                                            />
+                                        )}
                                         {item.type === SupportedTypes.audio && <div
                                             className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
                                             <MusicIcon className="w-16 h-16 text-blue-600 dark:text-blue-400" />
@@ -377,24 +381,34 @@ export default function MediaPage() {
                                             Unknown
                                         </div>}
                                     </div>
-                                    {/* 文件信息 */}
-                                    <div className="p-3">
-                                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                            {item.name}
-                                        </p>
-                                        <div className="flex justify-between items-center mt-1">
-                                            {item.size && (
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                    {formatFileSize(item.size)}
-                                                </p>
-                                            )}
-                                            {item.mtime && (
-                                                <p className="text-xs text-gray-400 dark:text-gray-500">
-                                                    {formatShortTime(item.mtime)}
-                                                </p>
-                                            )}
+                                    {/* 文件夹信息 */}
+                                    {item.type === SupportedTypes.folder && !settings.hideFileInfo && (
+                                        <div className="p-3">
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                                {item.name}
+                                            </p>
                                         </div>
-                                    </div>
+                                    )}
+                                    {/* 文件信息 */}
+                                    {item.type !== SupportedTypes.folder && !settings.hideFileInfo && (
+                                        <div className="p-3">
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                                {item.name}
+                                            </p>
+                                            <div className="flex justify-between items-center mt-1">
+                                                {item.size && (
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                        {formatFileSize(item.size)}
+                                                    </p>
+                                                )}
+                                                {item.mtime && (
+                                                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                                                        {formatShortTime(item.mtime)}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
