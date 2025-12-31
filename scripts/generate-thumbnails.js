@@ -224,10 +224,6 @@ async function main() {
     if (stats.errors > 0) {
         console.log('\n⚠️  部分文件处理失败，请检查上方的错误信息');
     }
-
-    if (stats.generated > 0) {
-        console.log('\n💡 提示: 重启开发服务器以确保缓存生效');
-    }
 }
 
 // 运行脚本
