@@ -8,7 +8,7 @@
         "build": "next build",
         "start": "next start",
         "lint": "eslint",
-        "generate-thumbnails": "node generate-thumbnails.js"
+        "generate-thumbnails": "node ./scripts/generate-thumbnails.js"
     },
     "dependencies": {
         "next": "16.1.1",
