@@ -95,6 +95,9 @@ export async function GET(request) {
             // 1. 文件夹优先
             if (a.type === folderType && b.type !== folderType) return -1;
             if (a.type !== folderType && b.type === folderType) return 1;
+            if (a.type === folderType && b.type === folderType) {
+                return a.name.localeCompare(b.name);
+            }
 
             // 2. 按更新时间排序（新的在前）
             const mtimeDiff = b.mtime - a.mtime;
