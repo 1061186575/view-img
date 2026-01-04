@@ -35,7 +35,6 @@ export default function MediaPage() {
     const [isPC, setIsPC] = useState(false);
     const [settings, setSettings] = useState({
         enableThumbnails: true,
-        autoLoadVideo: true,
         hideFileInfo: false
     });
 
@@ -368,8 +367,9 @@ export default function MediaPage() {
                                         )}
                                         {item.type === SupportedTypes.video && (
                                             <VideoThumbnail
-                                                autoLoadVideo={settings.autoLoadVideo}
                                                 src={item.url}
+                                                videoPath={item.path}
+                                                onThumbnailClick={handleVideoClick}
                                             />
                                         )}
                                         {item.type === SupportedTypes.audio && <div
