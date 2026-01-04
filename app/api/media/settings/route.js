@@ -19,8 +19,6 @@ function getDefaultSettings() {
     return {
         enableThumbnails: true,
         autoLoadVideo: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
     };
 }
 
@@ -77,15 +75,10 @@ export async function POST(request) {
             }
         }
 
-        // 不保存前端传的 createdAt
-        delete body.createdAt;
         // 合并设置
         const newSettings = {
             ...existingSettings,
             ...body,
-            updatedAt: new Date().toISOString(),
-            // 如果是首次创建，添加创建时间
-            ...(!existingSettings.createdAt && { createdAt: new Date().toISOString() })
         };
 
         // 保存设置
@@ -104,9 +97,4 @@ export async function POST(request) {
             { status: 500 }
         );
     }
-}
-
-// PUT - 更新设置（与POST相同的处理）
-export async function PUT(request) {
-    return POST(request);
 }
