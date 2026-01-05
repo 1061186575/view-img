@@ -356,7 +356,7 @@ export default function MediaPage() {
                                             <PhotoView src={item.url}>
                                                 <Image
                                                     src={settings.enableThumbnails
-                                                        ? `/api/media/image?path=${encodeURIComponent(item.path)}&thumbnail=true`
+                                                        ? `/api/media/thumbnail/image?path=${encodeURIComponent(item.path)}&thumbnail=true`
                                                         : item.url}
                                                     alt={item.name}
                                                     fill
@@ -366,11 +366,7 @@ export default function MediaPage() {
                                             </PhotoView>
                                         )}
                                         {item.type === SupportedTypes.video && (
-                                            <VideoThumbnail
-                                                src={item.url}
-                                                videoPath={item.path}
-                                                onThumbnailClick={handleVideoClick}
-                                            />
+                                            <VideoThumbnail videoPath={item.path}/>
                                         )}
                                         {item.type === SupportedTypes.audio && <div
                                             className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">

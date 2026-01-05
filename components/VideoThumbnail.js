@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { PlaySimpleIcon, VideoIcon } from './icons';
 
-const VideoThumbnail = ({ src, videoPath, onThumbnailClick }) => {
+const VideoThumbnail = ({ videoPath }) => {
     const [thumbnailUrl, setThumbnailUrl] = useState(null);
     const [thumbnailLoading, setThumbnailLoading] = useState(true);
     const [thumbnailError, setThumbnailError] = useState(false);
@@ -32,13 +32,6 @@ const VideoThumbnail = ({ src, videoPath, onThumbnailClick }) => {
         generateThumbnail();
     }, [videoPath]);
 
-    const handleThumbnailClick = (e) => {
-        e.stopPropagation();
-        if (onThumbnailClick) {
-            onThumbnailClick(src);
-        }
-    };
-
     const handleImageLoad = () => {
         setThumbnailLoading(false);
         setThumbnailError(false);
@@ -52,7 +45,7 @@ const VideoThumbnail = ({ src, videoPath, onThumbnailClick }) => {
     // 显示缩略图
     if (thumbnailUrl) {
         return (
-            <div className="relative h-full cursor-pointer" onClick={handleThumbnailClick}>
+            <div className="relative h-full cursor-pointer">
                 <Image
                     src={thumbnailUrl}
                     alt="视频缩略图"
@@ -81,7 +74,7 @@ const VideoThumbnail = ({ src, videoPath, onThumbnailClick }) => {
 
     // 加载中或出错时显示图标
     return (
-        <div className={`flex items-center justify-center bg-gray-100 dark:bg-gray-800 w-full h-full cursor-pointer`} onClick={handleThumbnailClick}>
+        <div className={`flex items-center justify-center bg-gray-100 dark:bg-gray-800 w-full h-full cursor-pointer`}>
             <div className={thumbnailLoading ? "animate-pulse" : ""}>
                 <VideoIcon className="w-8 h-8 text-gray-400" />
             </div>
