@@ -56,7 +56,7 @@ const VideoThumbnail = ({ videoPath }) => {
                     onError={handleImageError}
                 />
                 {/* 播放按钮覆盖层 */}
-                <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center hover:bg-opacity-20 transition-colors">
+                <div className="absolute inset-0 bg-opacity-30 flex items-center justify-center hover:bg-opacity-20 transition-colors">
                     <PlaySimpleIcon className="w-8 h-8 text-white drop-shadow-lg" />
                 </div>
 

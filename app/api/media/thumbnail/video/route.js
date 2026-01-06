@@ -8,7 +8,7 @@ const THUMBNAIL_CONFIG = {
     width: 300,
     height: 240,
     quality: 80,
-    format: 'jpeg'
+    format: 'jpg'
 };
 
 export async function GET(request) {
@@ -66,10 +66,8 @@ export async function GET(request) {
         // 生成缩略图
         return new Promise((resolve) => {
             ffmpeg(fullVideoPath)
-                .seekInput('00:00:01') // 第1秒
                 .frames(1) // 只取一帧
                 .size(`${THUMBNAIL_CONFIG.width}x${THUMBNAIL_CONFIG.height}`) // 指定尺寸
-                .format(THUMBNAIL_CONFIG.format)
                 .on('end', () => {
                     try {
                         // 读取生成的缩略图文件
