@@ -334,10 +334,7 @@ export default function MediaPage() {
                     </div>
                 ) : (
                     /* 文件网格 */
-                    <PhotoProvider
-                        speed={() => 200}
-                        easing={(type) => (type === 2 ? 'cubic-bezier(0.36, 0, 0.66, -0.56)' : 'cubic-bezier(0.34, 1.56, 0.64, 1)')}
-                    >
+                    <PhotoProvider>
                         <div
                             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
                             {items.map((item, index) => (

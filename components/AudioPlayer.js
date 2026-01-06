@@ -19,6 +19,31 @@ const PLAY_MODES = {
     SINGLE_LOOP: 'single_loop' // 单曲循环
 };
 
+// 从 localStorage 读取配置
+const getStoredConfig = () => {
+    if (typeof window !== 'undefined') {
+        try {
+            const storedConfig = localStorage.getItem('audioPlayerConfig');
+            return storedConfig ? JSON.parse(storedConfig) : {};
+        } catch (error) {
+            console.warn('无法读取播放器配置:', error);
+            return {};
+        }
+    }
+    return {};
+};
+
+// 保存配置到 localStorage
+const saveConfig = (config) => {
+    if (typeof window !== 'undefined') {
+        try {
+            localStorage.setItem('audioPlayerConfig', JSON.stringify(config));
+        } catch (error) {
+            console.warn('无法保存播放器配置:', error);
+        }
+    }
+};
+
 export default function AudioPlayer({
     items = [],
     currentItem = {},
@@ -26,11 +51,15 @@ export default function AudioPlayer({
     className = ''
 }) {
     const audioRef = useRef(null);
-    const [playMode, setPlayMode] = useState(PLAY_MODES.SEQUENTIAL);
+
+    // 从 localStorage 读取初始配置
+    const initialConfig = getStoredConfig();
+
+    const [playMode, setPlayMode] = useState(initialConfig.playMode || PLAY_MODES.SEQUENTIAL);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
-    const [volume, setVolume] = useState(0.8);
+    const [volume, setVolume] = useState(initialConfig.volume || 0.8);
 
     // 获取当前播放项的索引
     const currentIndex = items.findIndex(item => item.name === currentItem.name);
@@ -211,6 +240,15 @@ export default function AudioPlayer({
             audioRef.current.volume = volume;
         }
     }, [volume]);
+
+    // 保存配置到 localStorage（当音量或播放模式改变时）
+    useEffect(() => {
+        const config = {
+            volume,
+            playMode
+        };
+        saveConfig(config);
+    }, [volume, playMode]);
 
     if (!currentItem.url) {
         return (

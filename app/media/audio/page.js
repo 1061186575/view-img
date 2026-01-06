@@ -10,7 +10,8 @@ import { ArrowLeftIcon, SpeakerIcon, ClipboardIcon } from '@/components/icons';
 
 export default function AudioPage() {
     const router = useRouter();
-    const searchParams = new URLSearchParams(getLocation().search);
+    const search = getLocation().search;
+    const searchParams = new URLSearchParams(search);
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentItem, setCurrentItem] = useState({});
@@ -49,7 +50,7 @@ export default function AudioPage() {
     useEffect(() => {
         const path = searchParams.get('path') || '';
         loadDirectory(path);
-    }, []);
+    }, [search]);
 
     // 处理播放项改变
     const handleCurrentItemChange = (item) => {
