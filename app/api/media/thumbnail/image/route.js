@@ -1,4 +1,3 @@
-import fs from 'fs';
 import sharp from 'sharp';
 import {
     validateMediaPath,
@@ -8,6 +7,8 @@ import {
     createMediaResponse,
     getContentType,
     createErrorResponse,
+    saveCacheFile,
+    readFileBuffer,
     DEFAULT_THUMBNAIL_CONFIG
 } from '@/lib/thumbnail-utils';
 
@@ -22,7 +23,7 @@ export async function GET(request) {
         const thumbnail = searchParams.get('thumbnail') === 'true';
 
         // 验证路径
-        const pathValidation = validateMediaPath(imagePath);
+        const pathValidation = await validateMediaPath(imagePath);
         if (!pathValidation.isValid) {
             return createErrorResponse(pathValidation.error, 400);
         }
@@ -31,25 +32,25 @@ export async function GET(request) {
 
         // 如果不是要缩略图，直接返回原图
         if (!thumbnail) {
-            return responseImage(fullPath);
+            return await responseImage(fullPath);
         }
 
         // 生成缩略图
         try {
             // 检查缓存目录
-            const cacheDir = ensureCacheDir('thumbnails');
+            const cacheDir = await ensureCacheDir('thumbnails');
 
             // 生成缓存文件名
-            const cacheFilePath = generateCacheFilePath(imagePath, fullPath, THUMBNAIL_CONFIG, cacheDir);
+            const cacheFilePath = await generateCacheFilePath(imagePath, fullPath, THUMBNAIL_CONFIG, cacheDir);
 
             // 检查缓存是否存在
-            const cachedResponse = getCachedResponse(cacheFilePath, `image/${THUMBNAIL_CONFIG.format}`);
+            const cachedResponse = await getCachedResponse(cacheFilePath, `image/${THUMBNAIL_CONFIG.format}`);
             if (cachedResponse) {
                 return cachedResponse;
             }
 
             // 生成缩略图
-            const imageBuffer = fs.readFileSync(fullPath);
+            const imageBuffer = await readFileBuffer(fullPath);
             const thumbnailBuffer = await sharp(imageBuffer)
                 .rotate() // 自动根据 EXIF 方向信息旋转图片
                 .resize(THUMBNAIL_CONFIG.width, THUMBNAIL_CONFIG.height, {
@@ -59,13 +60,13 @@ export async function GET(request) {
                 .jpeg({ quality: THUMBNAIL_CONFIG.quality })
                 .toBuffer();
 
-            fs.writeFileSync(cacheFilePath, thumbnailBuffer);
+            await saveCacheFile(cacheFilePath, thumbnailBuffer);
 
             return createMediaResponse(thumbnailBuffer, `image/${THUMBNAIL_CONFIG.format}`);
 
         } catch (sharpError) {
             console.error('Sharp error, falling back to original image:', sharpError);
-            return responseImage(fullPath);
+            return await responseImage(fullPath);
         }
 
     } catch (error) {
@@ -74,8 +75,8 @@ export async function GET(request) {
     }
 }
 
-function responseImage(fullPath) {
-    const imageBuffer = fs.readFileSync(fullPath);
+async function responseImage(fullPath) {
+    const imageBuffer = await readFileBuffer(fullPath);
     const contentType = getContentType(fullPath);
     return createMediaResponse(imageBuffer, contentType);
 }

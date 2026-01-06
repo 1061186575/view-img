@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 import {
     SupportedTypes,
@@ -31,19 +31,21 @@ export async function GET(request) {
         }
 
         // 检查目录是否存在
-        if (!fs.existsSync(fullPath)) {
+        try {
+            await fs.access(fullPath);
+        } catch (error) {
             return NextResponse.json({
                 error: '请求的目录未找到'
             }, { status: 404 });
         }
 
         // 读取目录内容
-        const items = fs.readdirSync(fullPath);
+        const items = await fs.readdir(fullPath);
         const result = [];
 
         for (const item of items) {
             const itemPath = path.join(fullPath, item);
-            const stats = fs.statSync(itemPath);
+            const stats = await fs.stat(itemPath);
 
             if (stats.isDirectory()) {
                 // 添加文件夹

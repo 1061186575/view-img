@@ -1,4 +1,3 @@
-import fs from 'fs';
 import ffmpeg from 'fluent-ffmpeg';
 import {
     validateMediaPath,
@@ -7,6 +6,7 @@ import {
     getCachedResponse,
     createMediaResponse,
     createErrorResponse,
+    readFileBuffer,
     DEFAULT_THUMBNAIL_CONFIG
 } from '@/lib/thumbnail-utils';
 
@@ -19,7 +19,7 @@ export async function GET(request) {
         const videoPath = searchParams.get('path');
 
         // 验证路径
-        const pathValidation = validateMediaPath(videoPath);
+        const pathValidation = await validateMediaPath(videoPath);
         if (!pathValidation.isValid) {
             return createErrorResponse(pathValidation.error, 400);
         }
@@ -27,13 +27,13 @@ export async function GET(request) {
         const { fullPath: fullVideoPath } = pathValidation;
 
         // 检查缓存目录
-        const cacheDir = ensureCacheDir('video-thumbnails');
+        const cacheDir = await ensureCacheDir('video-thumbnails');
 
         // 生成缓存文件名
-        const cacheFilePath = generateCacheFilePath(videoPath, fullVideoPath, THUMBNAIL_CONFIG, cacheDir);
+        const cacheFilePath = await generateCacheFilePath(videoPath, fullVideoPath, THUMBNAIL_CONFIG, cacheDir);
 
         // 检查缓存是否存在
-        const cachedResponse = getCachedResponse(cacheFilePath, `image/${THUMBNAIL_CONFIG.format}`);
+        const cachedResponse = await getCachedResponse(cacheFilePath, `image/${THUMBNAIL_CONFIG.format}`);
         if (cachedResponse) {
             return cachedResponse;
         }
@@ -43,10 +43,10 @@ export async function GET(request) {
             ffmpeg(fullVideoPath)
                 .frames(1) // 只取一帧
                 .size(`${THUMBNAIL_CONFIG.width}x${THUMBNAIL_CONFIG.height}`) // 指定尺寸
-                .on('end', () => {
+                .on('end', async () => {
                     try {
                         // 读取生成的缩略图文件
-                        const thumbnailBuffer = fs.readFileSync(cacheFilePath);
+                        const thumbnailBuffer = await readFileBuffer(cacheFilePath);
                         resolve(createMediaResponse(thumbnailBuffer, `image/${THUMBNAIL_CONFIG.format}`));
                     } catch (readError) {
                         console.error('Error reading thumbnail file:', readError);
