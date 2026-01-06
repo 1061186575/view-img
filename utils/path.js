@@ -38,35 +38,3 @@ export const getParentPath = (currentPath) => {
     }
     return '';
 };
-
-/**
- * 标准化路径，移除多余的斜杠和空格
- * @param {string} path - 路径字符串
- * @returns {string} 标准化后的路径
- */
-export const normalizePath = (path) => {
-    if (!path) return '';
-
-    return path
-        .trim()
-        .replace(/\/+/g, '/') // 替换多个连续斜杠为单个斜杠
-        .replace(/^\/+|\/+$/g, ''); // 移除开头和结尾的斜杠
-};
-
-/**
- * 检查路径是否有效（安全性检查）
- * @param {string} path - 路径字符串
- * @returns {boolean} 路径是否有效
- */
-export const isValidPath = (path) => {
-    if (!path) return true; // 空路径是有效的（根目录）
-
-    // 不允许包含危险字符
-    const dangerousPatterns = [
-        /\.\./,  // 不允许 ..
-        /^\/+/,  // 不允许以斜杠开始
-        /[<>:"|?*]/  // 不允许文件名中的非法字符
-    ];
-
-    return !dangerousPatterns.some(pattern => pattern.test(path));
-};

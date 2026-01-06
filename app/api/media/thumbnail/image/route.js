@@ -1,15 +1,18 @@
-import { NextResponse } from 'next/server';
 import fs from 'fs';
-import path from 'path';
 import sharp from 'sharp';
+import {
+    validateMediaPath,
+    ensureCacheDir,
+    generateCacheFilePath,
+    getCachedResponse,
+    createMediaResponse,
+    getContentType,
+    createErrorResponse,
+    DEFAULT_THUMBNAIL_CONFIG
+} from '@/lib/thumbnail-utils';
 
-// 缩略图配置
-const THUMBNAIL_CONFIG = {
-    width: 300,
-    height: 300,
-    quality: 80,
-    format: 'jpeg'
-};
+// 图片缩略图配置
+const THUMBNAIL_CONFIG = DEFAULT_THUMBNAIL_CONFIG.IMAGE;
 
 // 支持缩略图, 前端+后端缓存
 export async function GET(request) {
@@ -18,30 +21,13 @@ export async function GET(request) {
         const imagePath = searchParams.get('path');
         const thumbnail = searchParams.get('thumbnail') === 'true';
 
-        if (!imagePath) {
-            return NextResponse.json({
-                error: '缺少图片路径参数'
-            }, { status: 400 });
+        // 验证路径
+        const pathValidation = validateMediaPath(imagePath);
+        if (!pathValidation.isValid) {
+            return createErrorResponse(pathValidation.error, 400);
         }
 
-        // 构建完整路径，确保安全性
-        const mediaPath = 'media';
-        const basePath = path.join(process.cwd(), 'public', mediaPath);
-        const fullPath = path.join(basePath, imagePath);
-
-        // 安全检查：确保路径在media目录内
-        if (!fullPath.startsWith(basePath)) {
-            return NextResponse.json({
-                error: '访问路径不合法'
-            }, { status: 400 });
-        }
-
-        // 检查文件是否存在
-        if (!fs.existsSync(fullPath)) {
-            return NextResponse.json({
-                error: '图片文件未找到'
-            }, { status: 404 });
-        }
+        const { fullPath } = pathValidation;
 
         // 如果不是要缩略图，直接返回原图
         if (!thumbnail) {
@@ -51,26 +37,15 @@ export async function GET(request) {
         // 生成缩略图
         try {
             // 检查缓存目录
-            const cacheDir = path.join(process.cwd(), '.next', 'cache', 'thumbnails');
-            if (!fs.existsSync(cacheDir)) {
-                fs.mkdirSync(cacheDir, { recursive: true });
-            }
+            const cacheDir = ensureCacheDir('thumbnails');
 
             // 生成缓存文件名
-            const imageStat = fs.statSync(fullPath);
-            const cacheKey = `${imagePath}_${imageStat.mtime.getTime()}_${THUMBNAIL_CONFIG.width}x${THUMBNAIL_CONFIG.height}`;
-            const base64 = Buffer.from(cacheKey).toString('base64');
-            const cacheFilePath = path.join(cacheDir, `${base64.replaceAll('/', '_')}.${THUMBNAIL_CONFIG.format}`);
+            const cacheFilePath = generateCacheFilePath(imagePath, fullPath, THUMBNAIL_CONFIG, cacheDir);
 
             // 检查缓存是否存在
-            if (fs.existsSync(cacheFilePath)) {
-                const cachedBuffer = fs.readFileSync(cacheFilePath);
-                return new NextResponse(cachedBuffer, {
-                    headers: {
-                        'Content-Type': `image/${THUMBNAIL_CONFIG.format}`,
-                        'Cache-Control': 'public, max-age=31536000',
-                    }
-                });
+            const cachedResponse = getCachedResponse(cacheFilePath, `image/${THUMBNAIL_CONFIG.format}`);
+            if (cachedResponse) {
+                return cachedResponse;
             }
 
             // 生成缩略图
@@ -86,12 +61,7 @@ export async function GET(request) {
 
             fs.writeFileSync(cacheFilePath, thumbnailBuffer);
 
-            return new NextResponse(thumbnailBuffer, {
-                headers: {
-                    'Content-Type': `image/${THUMBNAIL_CONFIG.format}`,
-                    'Cache-Control': 'public, max-age=31536000', // 1年缓存
-                }
-            });
+            return createMediaResponse(thumbnailBuffer, `image/${THUMBNAIL_CONFIG.format}`);
 
         } catch (sharpError) {
             console.error('Sharp error, falling back to original image:', sharpError);
@@ -100,30 +70,12 @@ export async function GET(request) {
 
     } catch (error) {
         console.error('Error serving image:', error);
-        return NextResponse.json({
-            error: '服务器错误'
-        }, { status: 500 });
+        return createErrorResponse('服务器错误');
     }
 }
 
 function responseImage(fullPath) {
     const imageBuffer = fs.readFileSync(fullPath);
-    const ext = path.extname(fullPath).toLowerCase();
-
-    let contentType = 'image/jpeg';
-    switch (ext) {
-        case '.png': contentType = 'image/png'; break;
-        case '.gif': contentType = 'image/gif'; break;
-        case '.webp': contentType = 'image/webp'; break;
-        case '.svg': contentType = 'image/svg+xml'; break;
-        case '.bmp': contentType = 'image/bmp'; break;
-        default: contentType = 'image/jpeg';
-    }
-
-    return new NextResponse(imageBuffer, {
-        headers: {
-            'Content-Type': contentType,
-            'Cache-Control': 'public, max-age=31536000',
-        }
-    });
+    const contentType = getContentType(fullPath);
+    return createMediaResponse(imageBuffer, contentType);
 }
