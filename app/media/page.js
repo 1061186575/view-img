@@ -50,15 +50,19 @@ export default function MediaPage() {
     const scrollTimeoutRef = useRef(null);
 
     // 更新URL路径
-    const updateURL = (path) => {
+    const updateURL = (path, replace = false) => {
         const url = new URL(window.location);
         if (path) {
             url.searchParams.set('path', path);
         } else {
             url.searchParams.delete('path');
         }
-        // 使用replace避免创建历史记录
-        window.history.replaceState({}, '', url);
+        // 根据 replace 参数决定是否创建历史记录
+        if (replace) {
+            window.history.replaceState({ path }, '', url);
+        } else {
+            window.history.pushState({ path }, '', url);
+        }
     };
 
     // 加载目录内容（首次加载）
@@ -78,7 +82,6 @@ export default function MediaPage() {
                 setItems(result.data.items);
                 setHasNextPage(result.data.pagination.hasNextPage);
                 setTotalItems(result.data.pagination.totalItems);
-                updateURL(path);
             }
         } catch (error) {
             console.error('Error loading directory:', error);
@@ -131,7 +134,24 @@ export default function MediaPage() {
         const pathFromUrl = searchParams.get('path') || '';
         loadDirectory(pathFromUrl);
         setPathInput(pathFromUrl);
+        // 初始化时使用replace避免创建历史记录
+        updateURL(pathFromUrl, true);
     }, []);
+
+    // 监听浏览器前进/后退按钮
+    useEffect(() => {
+        const handlePopState = (event) => {
+            const path = event.state?.path || '';
+            loadDirectory(path);
+            setPathInput(path);
+        };
+
+        window.addEventListener('popstate', handlePopState);
+
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, [loadDirectory]);
 
     // 当currentPath改变时，更新输入框
     useEffect(() => {
@@ -190,17 +210,20 @@ export default function MediaPage() {
     // 处理文件夹点击
     const handleFolderClick = useCallback((folderPath) => {
         loadDirectory(folderPath);
+        updateURL(folderPath);
     }, [loadDirectory]);
 
     // 返回上一级
     const handleBackClick = useCallback(() => {
         const parentPath = getParentPath(currentPath);
         loadDirectory(parentPath);
+        updateURL(parentPath);
     }, [currentPath, loadDirectory]);
 
     // 面包屑导航点击
     const handleBreadcrumbClick = useCallback((targetPath) => {
         loadDirectory(targetPath);
+        updateURL(targetPath);
     }, [loadDirectory]);
 
     // 处理路径输入
@@ -213,12 +236,14 @@ export default function MediaPage() {
         if (e.key === 'Enter') {
             e.preventDefault();
             loadDirectory(pathInput);
+            updateURL(pathInput);
         }
     }, [pathInput, loadDirectory]);
 
     // 处理跳转按钮点击
     const handleGoClick = useCallback(() => {
         loadDirectory(pathInput);
+        updateURL(pathInput);
     }, [pathInput, loadDirectory]);
 
 

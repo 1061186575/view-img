@@ -1,3 +1,4 @@
 {
-  "enableThumbnails": false
+  "enableThumbnails": true,
+  "hideFileInfo": false
 }
