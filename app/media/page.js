@@ -371,7 +371,7 @@ export default function MediaPage() {
                                         {item.type === SupportedTypes.folder && <div
                                             className="flex flex-col items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
                                             <FolderIcon className="w-12 h-12 text-blue-600 dark:text-blue-400" />
-                                            {settings.hideFileInfo && item.name}
+                                            <span className="text-sm p-1">{settings.hideFileInfo && item.name}</span>
                                         </div>}
                                         {item.type === SupportedTypes.image && (
                                             /* 图片项目 - 使用PhotoView包装 */
@@ -391,8 +391,9 @@ export default function MediaPage() {
                                             <VideoThumbnail videoPath={item.path}/>
                                         )}
                                         {item.type === SupportedTypes.audio && <div
-                                            className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
+                                            className="flex flex-col items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
                                             <MusicIcon className="w-16 h-16 text-blue-600 dark:text-blue-400" />
+                                            <span className="text-sm p-1">{settings.hideFileInfo && item.name}</span>
                                         </div>}
                                         {!Object.values(SupportedTypes).includes(item.type) && <div
                                             className="flex items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
