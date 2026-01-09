@@ -350,7 +350,7 @@ export default function MediaPage() {
                                         </div>}
                                         {item.type === SupportedTypes.image && (
                                             /* 图片项目 - 使用PhotoView包装 */
-                                            <PhotoView src={item.url}>
+                                            <PhotoView src={(item.url).replaceAll('+', '%2B')}>
                                                 <Image
                                                     src={settings.enableThumbnails
                                                         ? `/api/media/thumbnail/image?path=${encodeURIComponent(item.path)}&thumbnail=true`
