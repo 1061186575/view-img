@@ -12,7 +12,6 @@ export default function SettingsPage() {
     const [saving, setSaving] = useState(false);
     const [settings, setSettings] = useState({
         enableThumbnails: true, // 默认开启缩略图
-        autoLoadVideo: true, // 默认自动加载视频
         hideName: false,
         hideFileInfo: false,
     });
@@ -139,32 +138,6 @@ export default function SettingsPage() {
                                         <span
                                             className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
                                                 settings.enableThumbnails ? 'translate-x-5' : 'translate-x-0'
-                                            }`}
-                                        />
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <label className="text-sm font-medium text-gray-900 dark:text-white">
-                                        自动加载视频缩略图
-                                    </label>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                        开启后，会用 video 标签提前加载视频内容，关闭后仅在点击时生成，节省带宽
-                                    </p>
-                                </div>
-                                <div className="ml-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleSettingChange('autoLoadVideo', !settings.autoLoadVideo)}
-                                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
-                                            settings.autoLoadVideo ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
-                                        }`}
-                                    >
-                                        <span
-                                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                                settings.autoLoadVideo ? 'translate-x-5' : 'translate-x-0'
                                             }`}
                                         />
                                     </button>

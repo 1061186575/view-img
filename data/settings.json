@@ -1,4 +1,3 @@
 {
-  "enableThumbnails": true,
-  "autoLoadVideo": true
+  "enableThumbnails": false
 }

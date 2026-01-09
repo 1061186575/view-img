@@ -18,7 +18,6 @@ async function ensureDataDir() {
 function getDefaultSettings() {
     return {
         enableThumbnails: true,
-        autoLoadVideo: true,
     };
 }
 
@@ -54,7 +53,7 @@ export async function POST(request) {
         const body = await request.json();
 
         // 验证请求数据
-        if (typeof body.enableThumbnails !== 'boolean' || typeof body.autoLoadVideo !== 'boolean') {
+        if (typeof body.enableThumbnails !== 'boolean') {
             return NextResponse.json(
                 { error: '无效的设置数据' },
                 { status: 400 }
