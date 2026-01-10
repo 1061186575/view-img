@@ -6,11 +6,12 @@
         "dev": "next dev",
         "build": "next build",
         "start": "next start",
+        "start3001": "next start -p 3001",
         "bs": "next build && next start",
         "lint": "eslint",
         "generate-thumbnails": "node ./scripts/generate-thumbnails.js",
         "classify-files": "node ./scripts/classify-files.js",
-        "rpi": "zbox scp"
+        "publish": "zbox scp"
     },
     "dependencies": {
         "fluent-ffmpeg": "^2.1.3",
