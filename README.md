@@ -130,6 +130,9 @@ npm start
 # 或使用 PM2
 npm i -g pm2
 pm2 start npm --name "view-img" -- start
+
+# 使用 PM2 并且指定端口为3001
+pm2 start npm --name "view-img" -- start -- -p 3001
 ```
 
 ### Docker 部署
