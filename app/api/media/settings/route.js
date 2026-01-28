@@ -17,7 +17,7 @@ async function ensureDataDir() {
 // 获取默认设置
 function getDefaultSettings() {
     return {
-        enableThumbnails: true,
+        hideFileInfo: false,
     };
 }
 
@@ -51,14 +51,6 @@ export async function GET() {
 export async function POST(request) {
     try {
         const body = await request.json();
-
-        // 验证请求数据
-        if (typeof body.enableThumbnails !== 'boolean') {
-            return NextResponse.json(
-                { error: '无效的设置数据' },
-                { status: 400 }
-            );
-        }
 
         await ensureDataDir();
 

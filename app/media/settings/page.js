@@ -113,36 +113,10 @@ export default function SettingsPage() {
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
                     <div className="p-6">
                         <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-6">
-                            显示设置
+                            设置
                         </h2>
 
-                        {/* 缩略图设置 */}
                         <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <label className="text-sm font-medium text-gray-900 dark:text-white">
-                                        启用缩略图
-                                    </label>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                        开启后，图片将先显示缩略图，点击后展示完整图片，可提高页面加载速度
-                                    </p>
-                                </div>
-                                <div className="ml-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleSettingChange('enableThumbnails', !settings.enableThumbnails)}
-                                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
-                                            settings.enableThumbnails ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
-                                        }`}
-                                    >
-                                        <span
-                                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                                settings.enableThumbnails ? 'translate-x-5' : 'translate-x-0'
-                                            }`}
-                                        />
-                                    </button>
-                                </div>
-                            </div>
 
                             {/* 分割线 */}
                             <div className="border-t border-gray-200 dark:border-gray-700 pt-6">

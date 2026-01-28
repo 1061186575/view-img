@@ -34,7 +34,6 @@ export default function MediaPage() {
     const [pathInput, setPathInput] = useState('');
     const [isPC, setIsPC] = useState(false);
     const [settings, setSettings] = useState({
-        enableThumbnails: true,
         hideFileInfo: false
     });
 

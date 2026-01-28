@@ -7,6 +7,7 @@ export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);
         const filePath = searchParams.get('path');
+        const rangeHeader = request.headers.get('range');
 
         if (!filePath) {
             return NextResponse.json({
@@ -45,8 +46,7 @@ export async function GET(request) {
             }, { status: 400 });
         }
 
-        // 读取文件
-        const fileBuffer = await fs.readFile(fullPath);
+        const fileSize = stats.size;
 
         // 获取文件扩展名来确定MIME类型
         const ext = path.extname(filePath).toLowerCase();
@@ -73,17 +73,72 @@ export async function GET(request) {
             // 音频
             '.mp3': 'audio/mpeg',
             '.wav': 'audio/wav',
+            '.ogg': 'audio/ogg',
         };
 
         if (mimeTypes[ext]) {
             mimeType = mimeTypes[ext];
         }
 
+        // 处理Range请求（用于视频/音频的进度控制）
+        if (rangeHeader) {
+            const ranges = parseRange(rangeHeader, fileSize);
+
+            if (ranges === -1) {
+                // 无效的range请求
+                return new NextResponse(null, {
+                    status: 416,
+                    headers: {
+                        'Content-Range': `bytes */${fileSize}`,
+                    },
+                });
+            }
+
+            if (ranges && ranges.length === 1) {
+                const { start, end } = ranges[0];
+                const contentLength = end - start + 1;
+
+                // 使用createReadStream读取部分文件
+                const { createReadStream } = await import('fs');
+                const stream = createReadStream(fullPath, { start, end });
+
+                // 将Node.js stream转换为Web Stream
+                const readableStream = new ReadableStream({
+                    start(controller) {
+                        stream.on('data', (chunk) => {
+                            controller.enqueue(new Uint8Array(chunk));
+                        });
+                        stream.on('end', () => {
+                            controller.close();
+                        });
+                        stream.on('error', (err) => {
+                            controller.error(err);
+                        });
+                    }
+                });
+
+                return new NextResponse(readableStream, {
+                    status: 206,
+                    headers: {
+                        'Content-Type': mimeType,
+                        'Content-Length': contentLength.toString(),
+                        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+                        'Accept-Ranges': 'bytes',
+                        'Cache-Control': 'public, max-age=604800',
+                    },
+                });
+            }
+        }
+
+        // 非Range请求，返回整个文件
+        const fileBuffer = await fs.readFile(fullPath);
+
         return new NextResponse(fileBuffer, {
             headers: {
                 'Content-Type': mimeType,
+                'Content-Length': fileSize.toString(),
+                'Accept-Ranges': 'bytes',
                 'Cache-Control': 'public, max-age=604800', // 缓存7天
-                'Content-Length': fileBuffer.length.toString(),
             },
         });
 
@@ -93,4 +148,47 @@ export async function GET(request) {
             error: '读取文件时发生错误，请稍后重试'
         }, { status: 500 });
     }
+}
+
+/**
+ * 解析HTTP Range头
+ * @param {string} rangeHeader - Range头的值
+ * @param {number} size - 文件大小
+ * @returns {Array|number} 解析后的ranges数组，或-1表示无效
+ */
+function parseRange(rangeHeader, size) {
+    if (!rangeHeader || !rangeHeader.startsWith('bytes=')) {
+        return -1;
+    }
+
+    const ranges = [];
+    const rangeSpecs = rangeHeader.slice(6).split(',');
+
+    for (const rangeSpec of rangeSpecs) {
+        const range = rangeSpec.trim();
+        let start, end;
+
+        if (range.startsWith('-')) {
+            // 后缀范围: -500
+            start = size - parseInt(range.slice(1), 10);
+            end = size - 1;
+        } else if (range.endsWith('-')) {
+            // 前缀范围: 500-
+            start = parseInt(range.slice(0, -1), 10);
+            end = size - 1;
+        } else {
+            // 完整范围: 0-499
+            const parts = range.split('-');
+            start = parseInt(parts[0], 10);
+            end = parseInt(parts[1], 10);
+        }
+
+        if (start < 0 || end >= size || start > end) {
+            return -1;
+        }
+
+        ranges.push({ start, end });
+    }
+
+    return ranges.length > 0 ? ranges : -1;
 }
