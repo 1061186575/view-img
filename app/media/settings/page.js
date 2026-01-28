@@ -10,11 +10,7 @@ export default function SettingsPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [settings, setSettings] = useState({
-        enableThumbnails: true, // 默认开启缩略图
-        hideName: false,
-        hideFileInfo: false,
-    });
+    const [settings, setSettings] = useState({});
 
     // 加载设置
     const loadSettings = async () => {
@@ -116,7 +112,33 @@ export default function SettingsPage() {
                             设置
                         </h2>
 
+                        {/* 缩略图设置 */}
                         <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                    <label className="text-sm font-medium text-gray-900 dark:text-white">
+                                        是否在新页面播放视频
+                                    </label>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                        开启后，用 window.open 打开视频
+                                    </p>
+                                </div>
+                                <div className="ml-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSettingChange('newTabOpenVideo', !settings.newTabOpenVideo)}
+                                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${
+                                            settings.newTabOpenVideo ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                                        }`}
+                                    >
+                                        <span
+                                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                                settings.newTabOpenVideo ? 'translate-x-5' : 'translate-x-0'
+                                            }`}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
 
                             {/* 分割线 */}
                             <div className="border-t border-gray-200 dark:border-gray-700 pt-6">

@@ -34,7 +34,8 @@ export default function MediaPage() {
     const [pathInput, setPathInput] = useState('');
     const [isPC, setIsPC] = useState(false);
     const [settings, setSettings] = useState({
-        hideFileInfo: false
+        newTabOpenVideo: false,
+        hideFileInfo: false,
     });
 
     // 分页和滚动加载状态
@@ -262,7 +263,11 @@ export default function MediaPage() {
         } else if (item.type === SupportedTypes.image) {
             console.log('click image');
         } else if (item.type === SupportedTypes.video) {
-            handleVideoClick(item.url);
+            if (settings.newTabOpenVideo) {
+                window.open(item.url);
+            } else {
+                handleVideoClick(item.url);
+            }
         } else if (item.type === SupportedTypes.audio) {
             handleAudioClick(item.name);
         } else {
