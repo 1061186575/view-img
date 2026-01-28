@@ -106,6 +106,7 @@ export async function GET(request) {
                 const readableStream = new ReadableStream({
                     start(controller) {
                         stream.on('data', (chunk) => {
+                            // TypeError: Invalid state: Controller is already closed
                             controller.enqueue(new Uint8Array(chunk));
                         });
                         stream.on('end', () => {

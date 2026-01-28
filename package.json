@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "dev": "next dev",
+        "dev": "next dev -p 3001",
         "build": "next build",
         "start": "next start",
         "start3001": "next start -p 3001",
@@ -11,7 +11,7 @@
         "lint": "eslint",
         "generate-thumbnails": "node ./scripts/generate-thumbnails.js",
         "classify-files": "node ./scripts/classify-files.js",
-        "publish": "zbox scp"
+        "publish": "zbox file scp"
     },
     "dependencies": {
         "fluent-ffmpeg": "^2.1.3",
