@@ -17,6 +17,7 @@ export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);
         const videoPath = searchParams.get('path');
+        const thumbnail = searchParams.get('thumbnail') === 'true';
 
         // 验证路径
         const pathValidation = await validateMediaPath(videoPath);
@@ -25,6 +26,11 @@ export async function GET(request) {
         }
 
         const { fullPath: fullVideoPath } = pathValidation;
+
+        // 如果不是要缩略图，直接返回
+        if (!thumbnail) {
+            return await responseVideo(fullVideoPath);
+        }
 
         // 检查缓存目录
         const cacheDir = await ensureCacheDir('video-thumbnails');
@@ -64,4 +70,8 @@ export async function GET(request) {
         console.error('Error generating video thumbnail:', error);
         return createErrorResponse('生成缩略图时发生错误: ' + error.message);
     }
+}
+
+async function responseVideo(fullPath) {
+    return createMediaResponse(await readFileBuffer(fullPath), 'video/mp4');
 }

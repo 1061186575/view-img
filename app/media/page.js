@@ -375,11 +375,9 @@ export default function MediaPage() {
                                         </div>}
                                         {item.type === SupportedTypes.image && (
                                             /* 图片项目 - 使用PhotoView包装 */
-                                            <PhotoView src={(item.url).replaceAll('+', '%2B')}>
+                                            <PhotoView src={item.url}>
                                                 <Image
-                                                    src={settings.enableThumbnails
-                                                        ? `/api/media/thumbnail/image?path=${encodeURIComponent(item.path)}&thumbnail=true`
-                                                        : item.url}
+                                                    src={item.thumbnail}
                                                     alt={item.name}
                                                     fill
                                                     className="object-cover"
@@ -388,7 +386,7 @@ export default function MediaPage() {
                                             </PhotoView>
                                         )}
                                         {item.type === SupportedTypes.video && (
-                                            <VideoThumbnail videoPath={item.path}/>
+                                            <VideoThumbnail thumbnail={item.thumbnail}/>
                                         )}
                                         {item.type === SupportedTypes.audio && <div
                                             className="flex flex-col items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">

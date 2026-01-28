@@ -7,10 +7,10 @@ import {
     SUPPORTED_VIDEO_EXTENSIONS,
     SUPPORTED_AUDIO_EXTENSIONS,
 } from "@/app/media/const";
+import { MEDIA_CONFIG } from "@/lib/config";
 
 export async function GET(request) {
     try {
-        const mediaPath = 'media';
         const { searchParams } = new URL(request.url);
         const folder = searchParams.get('folder') || '';
 
@@ -20,7 +20,11 @@ export async function GET(request) {
         const offset = (page - 1) * limit;
 
         // 构建完整路径，确保安全性
-        const basePath = path.join(process.cwd(), 'public', mediaPath);
+        // 根据配置的媒体路径构建基础路径
+        const mediaRootPath = MEDIA_CONFIG.ROOT_PATH;
+        const basePath = path.isAbsolute(mediaRootPath)
+            ? mediaRootPath
+            : path.join(process.cwd(), mediaRootPath);
         const fullPath = path.join(basePath, folder);
 
         // 安全检查：确保路径在media目录内
@@ -46,13 +50,14 @@ export async function GET(request) {
         for (const item of items) {
             const itemPath = path.join(fullPath, item);
             const stats = await fs.stat(itemPath);
+            const filepath = folder ? `${folder}/${item}` : item;
 
             if (stats.isDirectory()) {
                 // 添加文件夹
                 result.push({
                     name: item,
                     type: SupportedTypes.folder,
-                    path: folder ? `${folder}/${item}` : item,
+                    path: filepath,
                     mtime: stats.mtime.getTime(), // 修改时间
                     birthtime: stats.birthtime.getTime() // 创建时间
                 });
@@ -61,8 +66,8 @@ export async function GET(request) {
 
                 const baseInfo = {
                     name: item,
-                    path: folder ? `${folder}/${item}` : item,
-                    url: `/${mediaPath}/${folder ? `${folder}/` : ''}${item}`,
+                    path: filepath,
+                    url: `/api/media/file?path=${encodeURIComponent(filepath)}`,
                     size: stats.size,
                     mtime: stats.mtime.getTime(), // 修改时间
                     birthtime: stats.birthtime.getTime() // 创建时间
@@ -72,12 +77,14 @@ export async function GET(request) {
                     // 添加图片
                     result.push({
                         type: SupportedTypes.image,
+                        thumbnail: `/api/media/thumbnail/image?path=${encodeURIComponent(filepath)}&thumbnail=true`,
                         ...baseInfo,
                     });
                 } else if (SUPPORTED_VIDEO_EXTENSIONS.includes(ext)) {
                     // 添加视频
                     result.push({
                         type: SupportedTypes.video,
+                        thumbnail: `/api/media/thumbnail/video?path=${encodeURIComponent(filepath)}&thumbnail=true`,
                         ...baseInfo,
                     });
                 } else if (SUPPORTED_AUDIO_EXTENSIONS.includes(ext)) {

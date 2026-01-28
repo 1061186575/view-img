@@ -4,8 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { PlaySimpleIcon, VideoIcon } from './icons';
 
-const VideoThumbnail = ({ videoPath }) => {
-    const thumbnailUrl = `/api/media/thumbnail/video?path=${encodeURIComponent(videoPath)}`;
+const VideoThumbnail = ({ thumbnail }) => {
     const [thumbnailLoading, setThumbnailLoading] = useState(true);
     const [thumbnailError, setThumbnailError] = useState(false);
 
@@ -35,7 +34,7 @@ const VideoThumbnail = ({ videoPath }) => {
     return (
         <div className="relative h-full cursor-pointer">
             <Image
-                src={thumbnailUrl}
+                src={thumbnail}
                 alt="video"
                 fill
                 className="object-cover"
