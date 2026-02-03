@@ -47,5 +47,4 @@ package-lock.json
 yarn.lock
 
 CLAUDE.md
-publishConfig.js
 md5Cache.json
