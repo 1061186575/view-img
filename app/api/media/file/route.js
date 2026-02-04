@@ -105,16 +105,69 @@ export async function GET(request) {
                 // 将Node.js stream转换为Web Stream
                 const readableStream = new ReadableStream({
                     start(controller) {
+                        let isClosed = false;
+
+                        // 处理控制器关闭事件
+                        const cleanup = () => {
+                            isClosed = true;
+                            if (stream && typeof stream.destroy === 'function') {
+                                stream.destroy();
+                            }
+                        };
+
                         stream.on('data', (chunk) => {
-                            // TypeError: Invalid state: Controller is already closed
-                            controller.enqueue(new Uint8Array(chunk));
+                            try {
+                                // 检查控制器状态，避免在已关闭的控制器上调用enqueue
+                                if (!isClosed && controller.desiredSize !== null) {
+                                    controller.enqueue(new Uint8Array(chunk));
+                                }
+                            } catch (error) {
+                                // 如果控制器已关闭，停止读取流
+                                if (error.name === 'TypeError' && error.message.includes('Controller is already closed')) {
+                                    cleanup();
+                                } else {
+                                    // 其他错误传递给控制器
+                                    if (!isClosed) {
+                                        try {
+                                            controller.error(error);
+                                        } catch (e) {
+                                            // 忽略控制器已关闭的错误
+                                        }
+                                    }
+                                    cleanup();
+                                }
+                            }
                         });
+
                         stream.on('end', () => {
-                            controller.close();
+                            try {
+                                if (!isClosed && controller.desiredSize !== null) {
+                                    controller.close();
+                                }
+                            } catch (error) {
+                                // 忽略控制器已关闭的错误
+                            }
+                            cleanup();
                         });
+
                         stream.on('error', (err) => {
-                            controller.error(err);
+                            try {
+                                if (!isClosed && controller.desiredSize !== null) {
+                                    controller.error(err);
+                                }
+                            } catch (error) {
+                                // 忽略控制器已关闭的错误
+                            }
+                            cleanup();
                         });
+                    },
+
+                    // 处理流被取消的情况（例如用户停止播放）
+                    cancel(reason) {
+                        console.log('Stream cancelled:', reason);
+                        if (stream && typeof stream.destroy === 'function') {
+                            stream.destroy();
+                        }
                     }
                 });
 
