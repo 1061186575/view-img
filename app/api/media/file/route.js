@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
+import { createReadStream } from 'fs';
 import path from 'path';
 import { MEDIA_CONFIG } from "@/lib/config";
 
@@ -99,7 +100,6 @@ export async function GET(request) {
                 const contentLength = end - start + 1;
 
                 // 使用createReadStream读取部分文件
-                const { createReadStream } = await import('fs');
                 const stream = createReadStream(fullPath, { start, end });
 
                 // 将Node.js stream转换为Web Stream
@@ -132,9 +132,9 @@ export async function GET(request) {
         }
 
         // 非Range请求，返回整个文件
-        const fileBuffer = await fs.readFile(fullPath);
+        const fileStream = createReadStream(fullPath);
 
-        return new NextResponse(fileBuffer, {
+        return new NextResponse(fileStream, {
             headers: {
                 'Content-Type': mimeType,
                 'Content-Length': fileSize.toString(),
