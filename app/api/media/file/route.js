@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import { createReadStream } from 'fs';
 import path from 'path';
 import { MEDIA_CONFIG } from "@/lib/config";
-import { getContentType, createWebStreamFromNodeStream, shouldUseStream } from "@/lib/thumbnail-utils";
+import { getContentType, shouldUseStream } from "@/lib/thumbnail-utils";
 
 export async function GET(request) {
     try {
@@ -71,9 +71,8 @@ export async function GET(request) {
 
                 // 使用createReadStream读取部分文件
                 const stream = createReadStream(fullPath, { start, end });
-                const readableStream = createWebStreamFromNodeStream(stream);
 
-                return new NextResponse(readableStream, {
+                return new NextResponse(stream, {
                     status: 206,
                     headers: {
                         'Content-Type': mimeType,
@@ -92,9 +91,8 @@ export async function GET(request) {
         if (useStream) {
             // 大文件使用流式传输，避免占用过多内存
             const stream = createReadStream(fullPath);
-            const readableStream = createWebStreamFromNodeStream(stream);
 
-            return new NextResponse(readableStream, {
+            return new NextResponse(stream, {
                 headers: {
                     'Content-Type': mimeType,
                     'Content-Length': fileSize.toString(),
