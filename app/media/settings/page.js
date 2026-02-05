@@ -10,48 +10,43 @@ export default function SettingsPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [settings, setSettings] = useState({});
+    // 默认设置
+    const defaultSettings = {
+        newTabOpenVideo: false,
+        hideFileInfo: false,
+    };
 
-    // 加载设置
-    const loadSettings = async () => {
+    const [settings, setSettings] = useState(defaultSettings);
+
+    // 从 localStorage 加载设置
+    const loadSettings = () => {
         setLoading(true);
         try {
-            const response = await fetch('/api/media/settings');
-            if (response.ok) {
-                const data = await response.json();
-                setSettings(data);
+            const savedSettings = localStorage.getItem('media-settings');
+            if (savedSettings) {
+                const parsedSettings = JSON.parse(savedSettings);
+                setSettings(parsedSettings);
             } else {
-                // 如果配置文件不存在，使用默认设置
-                console.log('Using default settings');
+                // 如果没有保存的设置，使用默认设置
+                setSettings(defaultSettings);
             }
         } catch (error) {
-            console.error('Error loading settings:', error);
-            showError('加载设置失败');
+            console.error('Error loading settings from localStorage:', error);
+            // 如果解析失败，使用默认设置
+            setSettings(defaultSettings);
         } finally {
             setLoading(false);
         }
     };
 
-    // 保存设置
-    const saveSettings = async () => {
+    // 保存设置到 localStorage
+    const saveSettings = () => {
         setSaving(true);
         try {
-            const response = await fetch('/api/media/settings', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(settings),
-            });
-
-            if (response.ok) {
-                showSuccess('设置保存成功');
-            } else {
-                const errorData = await response.json();
-                showError(errorData.error || '保存设置失败');
-            }
+            localStorage.setItem('media-settings', JSON.stringify(settings));
+            showSuccess('设置保存成功');
         } catch (error) {
-            console.error('Error saving settings:', error);
+            console.error('Error saving settings to localStorage:', error);
             showError('保存设置失败');
         } finally {
             setSaving(false);

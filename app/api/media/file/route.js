@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import { createReadStream } from 'fs';
 import path from 'path';
 import { MEDIA_CONFIG } from "@/lib/config";
+import { getContentType, createWebStreamFromNodeStream, shouldUseStream } from "@/lib/thumbnail-utils";
 
 export async function GET(request) {
     try {
@@ -48,38 +49,7 @@ export async function GET(request) {
         }
 
         const fileSize = stats.size;
-
-        // 获取文件扩展名来确定MIME类型
-        const ext = path.extname(filePath).toLowerCase();
-        let mimeType = 'application/octet-stream'; // 默认MIME类型
-
-        // 根据文件扩展名设置MIME类型
-        const mimeTypes = {
-            // 图片
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.png': 'image/png',
-            '.gif': 'image/gif',
-            '.webp': 'image/webp',
-            '.svg': 'image/svg+xml',
-            '.bmp': 'image/bmp',
-            // 视频
-            '.mp4': 'video/mp4',
-            '.webm': 'video/webm',
-            '.avi': 'video/x-msvideo',
-            '.mov': 'video/quicktime',
-            '.wmv': 'video/x-ms-wmv',
-            '.flv': 'video/x-flv',
-            '.mkv': 'video/x-matroska',
-            // 音频
-            '.mp3': 'audio/mpeg',
-            '.wav': 'audio/wav',
-            '.ogg': 'audio/ogg',
-        };
-
-        if (mimeTypes[ext]) {
-            mimeType = mimeTypes[ext];
-        }
+        let mimeType = getContentType(filePath);
 
         // 处理Range请求（用于视频/音频的进度控制）
         if (rangeHeader) {
@@ -101,22 +71,7 @@ export async function GET(request) {
 
                 // 使用createReadStream读取部分文件
                 const stream = createReadStream(fullPath, { start, end });
-
-                // 将Node.js stream转换为Web Stream
-                const readableStream = new ReadableStream({
-                    start(controller) {
-                        stream.on('data', (chunk) => {
-                            // TypeError: Invalid state: Controller is already closed
-                            controller.enqueue(new Uint8Array(chunk));
-                        });
-                        stream.on('end', () => {
-                            controller.close();
-                        });
-                        stream.on('error', (err) => {
-                            controller.error(err);
-                        });
-                    }
-                });
+                const readableStream = createWebStreamFromNodeStream(stream);
 
                 return new NextResponse(readableStream, {
                     status: 206,
@@ -131,17 +86,35 @@ export async function GET(request) {
             }
         }
 
-        // 非Range请求，返回整个文件
-        const fileStream = createReadStream(fullPath);
+        // 非Range请求，根据文件大小智能选择处理方式
+        const { useStream } = await shouldUseStream(fullPath);
 
-        return new NextResponse(fileStream, {
-            headers: {
-                'Content-Type': mimeType,
-                'Content-Length': fileSize.toString(),
-                'Accept-Ranges': 'bytes',
-                'Cache-Control': 'public, max-age=604800', // 缓存7天
-            },
-        });
+        if (useStream) {
+            // 大文件使用流式传输，避免占用过多内存
+            const stream = createReadStream(fullPath);
+            const readableStream = createWebStreamFromNodeStream(stream);
+
+            return new NextResponse(readableStream, {
+                headers: {
+                    'Content-Type': mimeType,
+                    'Content-Length': fileSize.toString(),
+                    'Accept-Ranges': 'bytes',
+                    'Cache-Control': 'public, max-age=604800', // 缓存7天
+                },
+            });
+        } else {
+            // 小文件直接读取到内存，响应速度更快
+            const fileBuffer = await fs.readFile(fullPath);
+
+            return new NextResponse(fileBuffer, {
+                headers: {
+                    'Content-Type': mimeType,
+                    'Content-Length': fileSize.toString(),
+                    'Accept-Ranges': 'bytes',
+                    'Cache-Control': 'public, max-age=604800', // 缓存7天
+                },
+            });
+        }
 
     } catch (error) {
         console.error('Error serving file:', error);
@@ -193,3 +166,4 @@ function parseRange(rangeHeader, size) {
 
     return ranges.length > 0 ? ranges : -1;
 }
+
