@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
+import { createReadStream } from 'fs';
 import path from 'path';
 import { MEDIA_CONFIG } from "@/lib/config";
+import { getContentType } from "@/lib/thumbnail-utils";
 
 export async function GET(request) {
     try {
@@ -47,38 +49,7 @@ export async function GET(request) {
         }
 
         const fileSize = stats.size;
-
-        // 获取文件扩展名来确定MIME类型
-        const ext = path.extname(filePath).toLowerCase();
-        let mimeType = 'application/octet-stream'; // 默认MIME类型
-
-        // 根据文件扩展名设置MIME类型
-        const mimeTypes = {
-            // 图片
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.png': 'image/png',
-            '.gif': 'image/gif',
-            '.webp': 'image/webp',
-            '.svg': 'image/svg+xml',
-            '.bmp': 'image/bmp',
-            // 视频
-            '.mp4': 'video/mp4',
-            '.webm': 'video/webm',
-            '.avi': 'video/x-msvideo',
-            '.mov': 'video/quicktime',
-            '.wmv': 'video/x-ms-wmv',
-            '.flv': 'video/x-flv',
-            '.mkv': 'video/x-matroska',
-            // 音频
-            '.mp3': 'audio/mpeg',
-            '.wav': 'audio/wav',
-            '.ogg': 'audio/ogg',
-        };
-
-        if (mimeTypes[ext]) {
-            mimeType = mimeTypes[ext];
-        }
+        let mimeType = getContentType(filePath);
 
         // 处理Range请求（用于视频/音频的进度控制）
         if (rangeHeader) {
@@ -99,77 +70,8 @@ export async function GET(request) {
                 const contentLength = end - start + 1;
 
                 // 使用createReadStream读取部分文件
-                const { createReadStream } = await import('fs');
                 const stream = createReadStream(fullPath, { start, end });
-
-                // 将Node.js stream转换为Web Stream
-                const readableStream = new ReadableStream({
-                    start(controller) {
-                        let isClosed = false;
-
-                        // 处理控制器关闭事件
-                        const cleanup = () => {
-                            isClosed = true;
-                            if (stream && typeof stream.destroy === 'function') {
-                                stream.destroy();
-                            }
-                        };
-
-                        stream.on('data', (chunk) => {
-                            try {
-                                // 检查控制器状态，避免在已关闭的控制器上调用enqueue
-                                if (!isClosed && controller.desiredSize !== null) {
-                                    controller.enqueue(new Uint8Array(chunk));
-                                }
-                            } catch (error) {
-                                // 如果控制器已关闭，停止读取流
-                                if (error.name === 'TypeError' && error.message.includes('Controller is already closed')) {
-                                    cleanup();
-                                } else {
-                                    // 其他错误传递给控制器
-                                    if (!isClosed) {
-                                        try {
-                                            controller.error(error);
-                                        } catch (e) {
-                                            // 忽略控制器已关闭的错误
-                                        }
-                                    }
-                                    cleanup();
-                                }
-                            }
-                        });
-
-                        stream.on('end', () => {
-                            try {
-                                if (!isClosed && controller.desiredSize !== null) {
-                                    controller.close();
-                                }
-                            } catch (error) {
-                                // 忽略控制器已关闭的错误
-                            }
-                            cleanup();
-                        });
-
-                        stream.on('error', (err) => {
-                            try {
-                                if (!isClosed && controller.desiredSize !== null) {
-                                    controller.error(err);
-                                }
-                            } catch (error) {
-                                // 忽略控制器已关闭的错误
-                            }
-                            cleanup();
-                        });
-                    },
-
-                    // 处理流被取消的情况（例如用户停止播放）
-                    cancel(reason) {
-                        console.log('Stream cancelled:', reason);
-                        if (stream && typeof stream.destroy === 'function') {
-                            stream.destroy();
-                        }
-                    }
-                });
+                const readableStream = createWebStreamFromNodeStream(stream);
 
                 return new NextResponse(readableStream, {
                     status: 206,
@@ -184,10 +86,11 @@ export async function GET(request) {
             }
         }
 
-        // 非Range请求，返回整个文件
-        const fileBuffer = await fs.readFile(fullPath);
+        // 非Range请求，使用流式传输返回整个文件，避免大文件占用过多内存
+        const stream = createReadStream(fullPath);
+        const readableStream = createWebStreamFromNodeStream(stream);
 
-        return new NextResponse(fileBuffer, {
+        return new NextResponse(readableStream, {
             headers: {
                 'Content-Type': mimeType,
                 'Content-Length': fileSize.toString(),
@@ -245,4 +148,79 @@ function parseRange(rangeHeader, size) {
     }
 
     return ranges.length > 0 ? ranges : -1;
+}
+
+/**
+ * 将 Node.js 可读流转换为 Web 可读流
+ * @param {NodeJS.ReadableStream} nodeStream - Node.js 流
+ * @returns {ReadableStream} Web 可读流
+ */
+function createWebStreamFromNodeStream(nodeStream) {
+    return new ReadableStream({
+        start(controller) {
+            let isClosed = false;
+
+            // 处理控制器关闭事件
+            const cleanup = () => {
+                isClosed = true;
+                if (nodeStream && typeof nodeStream.destroy === 'function') {
+                    nodeStream.destroy();
+                }
+            };
+
+            nodeStream.on('data', (chunk) => {
+                try {
+                    // 检查控制器状态，避免在已关闭的控制器上调用enqueue
+                    if (!isClosed && controller.desiredSize !== null) {
+                        controller.enqueue(new Uint8Array(chunk));
+                    }
+                } catch (error) {
+                    // 如果控制器已关闭，停止读取流
+                    if (error.name === 'TypeError' && error.message.includes('Controller is already closed')) {
+                        cleanup();
+                    } else {
+                        // 其他错误传递给控制器
+                        if (!isClosed) {
+                            try {
+                                controller.error(error);
+                            } catch (e) {
+                                // 忽略控制器已关闭的错误
+                            }
+                        }
+                        cleanup();
+                    }
+                }
+            });
+
+            nodeStream.on('end', () => {
+                try {
+                    if (!isClosed && controller.desiredSize !== null) {
+                        controller.close();
+                    }
+                } catch (error) {
+                    // 忽略控制器已关闭的错误
+                }
+                cleanup();
+            });
+
+            nodeStream.on('error', (err) => {
+                try {
+                    if (!isClosed && controller.desiredSize !== null) {
+                        controller.error(err);
+                    }
+                } catch (error) {
+                    // 忽略控制器已关闭的错误
+                }
+                cleanup();
+            });
+        },
+
+        // 处理流被取消的情况（例如用户停止下载）
+        cancel(reason) {
+            console.log('Stream cancelled:', reason);
+            if (nodeStream && typeof nodeStream.destroy === 'function') {
+                nodeStream.destroy();
+            }
+        }
+    });
 }

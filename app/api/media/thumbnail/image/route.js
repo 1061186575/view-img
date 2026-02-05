@@ -9,6 +9,8 @@ import {
     createErrorResponse,
     saveCacheFile,
     readFileBuffer,
+    shouldUseStream,
+    createStreamMediaResponse,
     DEFAULT_THUMBNAIL_CONFIG
 } from '@/lib/thumbnail-utils';
 
@@ -76,7 +78,17 @@ export async function GET(request) {
 }
 
 async function responseImage(fullPath) {
-    const imageBuffer = await readFileBuffer(fullPath);
     const contentType = getContentType(fullPath);
-    return createMediaResponse(imageBuffer, contentType);
+
+    // 检查文件大小，决定是否使用流式处理
+    const { useStream } = await shouldUseStream(fullPath);
+
+    if (useStream) {
+        // 大文件使用流式传输
+        return await createStreamMediaResponse(fullPath, contentType);
+    } else {
+        // 小文件直接读取到内存
+        const imageBuffer = await readFileBuffer(fullPath);
+        return createMediaResponse(imageBuffer, contentType);
+    }
 }
