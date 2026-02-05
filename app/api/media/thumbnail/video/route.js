@@ -15,8 +15,12 @@ import {
 
 // 视频缩略图配置
 const THUMBNAIL_CONFIG = DEFAULT_THUMBNAIL_CONFIG.VIDEO;
+let notFfmpeg = false;
 
 export async function GET(request) {
+    if (notFfmpeg) {
+        return createErrorResponse('请安装 FFmpeg 并将其添加到环境变量中。');
+    }
     try {
         const { searchParams } = new URL(request.url);
         const videoPath = searchParams.get('path');
@@ -56,7 +60,11 @@ export async function GET(request) {
             return createMediaResponse(thumbnailBuffer, `image/${THUMBNAIL_CONFIG.format}`);
 
         } catch (ffmpegError) {
-            console.error('Error generating video thumbnail:', ffmpegError);
+            if (ffmpegError.message.includes('Cannot find ffmpeg')) {
+                notFfmpeg = true;
+            } else {
+                console.error('Error generating video thumbnail:', ffmpegError);
+            }
             return createErrorResponse('生成视频缩略图失败: ' + ffmpegError.message);
         }
 
@@ -98,7 +106,6 @@ async function generateVideoThumbnail(videoPath, outputPath, config) {
                 resolve();
             })
             .on('error', (err) => {
-                console.error('FFmpeg error:', err);
                 reject(new Error(`FFmpeg processing failed: ${err.message}`));
             })
             .save(outputPath);
