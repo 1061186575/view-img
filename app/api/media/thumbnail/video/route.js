@@ -91,7 +91,7 @@ async function responseVideo(fullPath) {
  */
 async function generateVideoThumbnail(videoPath, outputPath, config) {
     return new Promise((resolve, reject) => {
-        const ffmpegProcess = ffmpeg(videoPath)
+        ffmpeg(videoPath)
             .frames(1) // 只取一帧
             .size(`${config.width}x${config.height}`) // 指定尺寸
             .on('end', () => {
@@ -102,15 +102,5 @@ async function generateVideoThumbnail(videoPath, outputPath, config) {
                 reject(new Error(`FFmpeg processing failed: ${err.message}`));
             })
             .save(outputPath);
-
-        // 设置超时防止长时间阻塞
-        const timeout = setTimeout(() => {
-            ffmpegProcess.kill('SIGKILL');
-            reject(new Error('Video thumbnail generation timed out after 30 seconds'));
-        }, 30000);
-
-        // 清理超时
-        ffmpegProcess.on('end', () => clearTimeout(timeout));
-        ffmpegProcess.on('error', () => clearTimeout(timeout));
     });
 }

@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import { createReadStream } from 'fs';
 import path from 'path';
 import { MEDIA_CONFIG } from "@/lib/config";
-import { getContentType } from "@/lib/thumbnail-utils";
+import { getContentType, createWebStreamFromNodeStream, shouldUseStream } from "@/lib/thumbnail-utils";
 
 export async function GET(request) {
     try {
@@ -86,18 +86,35 @@ export async function GET(request) {
             }
         }
 
-        // 非Range请求，使用流式传输返回整个文件，避免大文件占用过多内存
-        const stream = createReadStream(fullPath);
-        const readableStream = createWebStreamFromNodeStream(stream);
+        // 非Range请求，根据文件大小智能选择处理方式
+        const { useStream } = await shouldUseStream(fullPath);
 
-        return new NextResponse(readableStream, {
-            headers: {
-                'Content-Type': mimeType,
-                'Content-Length': fileSize.toString(),
-                'Accept-Ranges': 'bytes',
-                'Cache-Control': 'public, max-age=604800', // 缓存7天
-            },
-        });
+        if (useStream) {
+            // 大文件使用流式传输，避免占用过多内存
+            const stream = createReadStream(fullPath);
+            const readableStream = createWebStreamFromNodeStream(stream);
+
+            return new NextResponse(readableStream, {
+                headers: {
+                    'Content-Type': mimeType,
+                    'Content-Length': fileSize.toString(),
+                    'Accept-Ranges': 'bytes',
+                    'Cache-Control': 'public, max-age=604800', // 缓存7天
+                },
+            });
+        } else {
+            // 小文件直接读取到内存，响应速度更快
+            const fileBuffer = await fs.readFile(fullPath);
+
+            return new NextResponse(fileBuffer, {
+                headers: {
+                    'Content-Type': mimeType,
+                    'Content-Length': fileSize.toString(),
+                    'Accept-Ranges': 'bytes',
+                    'Cache-Control': 'public, max-age=604800', // 缓存7天
+                },
+            });
+        }
 
     } catch (error) {
         console.error('Error serving file:', error);
@@ -150,77 +167,3 @@ function parseRange(rangeHeader, size) {
     return ranges.length > 0 ? ranges : -1;
 }
 
-/**
- * 将 Node.js 可读流转换为 Web 可读流
- * @param {NodeJS.ReadableStream} nodeStream - Node.js 流
- * @returns {ReadableStream} Web 可读流
- */
-function createWebStreamFromNodeStream(nodeStream) {
-    return new ReadableStream({
-        start(controller) {
-            let isClosed = false;
-
-            // 处理控制器关闭事件
-            const cleanup = () => {
-                isClosed = true;
-                if (nodeStream && typeof nodeStream.destroy === 'function') {
-                    nodeStream.destroy();
-                }
-            };
-
-            nodeStream.on('data', (chunk) => {
-                try {
-                    // 检查控制器状态，避免在已关闭的控制器上调用enqueue
-                    if (!isClosed && controller.desiredSize !== null) {
-                        controller.enqueue(new Uint8Array(chunk));
-                    }
-                } catch (error) {
-                    // 如果控制器已关闭，停止读取流
-                    if (error.name === 'TypeError' && error.message.includes('Controller is already closed')) {
-                        cleanup();
-                    } else {
-                        // 其他错误传递给控制器
-                        if (!isClosed) {
-                            try {
-                                controller.error(error);
-                            } catch (e) {
-                                // 忽略控制器已关闭的错误
-                            }
-                        }
-                        cleanup();
-                    }
-                }
-            });
-
-            nodeStream.on('end', () => {
-                try {
-                    if (!isClosed && controller.desiredSize !== null) {
-                        controller.close();
-                    }
-                } catch (error) {
-                    // 忽略控制器已关闭的错误
-                }
-                cleanup();
-            });
-
-            nodeStream.on('error', (err) => {
-                try {
-                    if (!isClosed && controller.desiredSize !== null) {
-                        controller.error(err);
-                    }
-                } catch (error) {
-                    // 忽略控制器已关闭的错误
-                }
-                cleanup();
-            });
-        },
-
-        // 处理流被取消的情况（例如用户停止下载）
-        cancel(reason) {
-            console.log('Stream cancelled:', reason);
-            if (nodeStream && typeof nodeStream.destroy === 'function') {
-                nodeStream.destroy();
-            }
-        }
-    });
-}
