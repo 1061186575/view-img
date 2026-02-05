@@ -158,18 +158,17 @@ export default function MediaPage() {
         setPathInput(currentPath);
     }, [currentPath]);
 
-    // 加载设置
+    // 从 localStorage 加载设置
     useEffect(() => {
-        const loadSettings = async () => {
+        const loadSettings = () => {
             try {
-                const response = await fetch('/api/media/settings');
-                if (response.ok) {
-                    const data = await response.json();
-                    setSettings(data);
+                const savedSettings = localStorage.getItem('media-settings');
+                if (savedSettings) {
+                    const parsedSettings = JSON.parse(savedSettings);
+                    setSettings(parsedSettings);
                 }
             } catch (error) {
-                console.error('Error loading settings:', error);
-                // 使用默认设置，不显示错误
+                console.error('Error loading settings from localStorage:', error);
             }
         };
         loadSettings();
