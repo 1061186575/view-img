@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import { createReadStream } from 'fs';
 import path from 'path';
 import { MEDIA_CONFIG } from "@/lib/config";
-import { getContentType, shouldUseStream } from "@/lib/thumbnail-utils";
+import { getContentType, readFileBuffer, shouldUseStream } from "@/lib/thumbnail-utils";
 
 export async function GET(request) {
     try {
@@ -102,7 +102,7 @@ export async function GET(request) {
             });
         } else {
             // 小文件直接读取到内存，响应速度更快
-            const fileBuffer = await fs.readFile(fullPath);
+            const fileBuffer = await readFileBuffer(fullPath);
 
             return new NextResponse(fileBuffer, {
                 headers: {
