@@ -23,7 +23,7 @@ export async function GET(request) {
         // 根据配置的媒体路径构建基础路径
         const mediaRootPath = MEDIA_CONFIG.ROOT_PATH;
         const basePath = path.isAbsolute(mediaRootPath)
-            ? mediaRootPath
+            ? path.join(mediaRootPath)
             : path.join(process.cwd(), mediaRootPath);
         const fullPath = path.join(basePath, folder);
 

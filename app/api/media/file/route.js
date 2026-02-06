@@ -20,7 +20,7 @@ export async function GET(request) {
         // 构建完整路径，确保安全性
         const mediaRootPath = MEDIA_CONFIG.ROOT_PATH;
         const basePath = path.isAbsolute(mediaRootPath)
-            ? mediaRootPath
+            ? path.join(mediaRootPath)
             : path.join(process.cwd(), mediaRootPath);
         const fullPath = path.join(basePath, filePath);
 
