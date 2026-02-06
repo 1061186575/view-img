@@ -1,4 +1,5 @@
 import ffmpeg from 'fluent-ffmpeg';
+import fs from 'fs';
 import {
     validateMediaPath,
     ensureCacheDir,
@@ -15,6 +16,9 @@ import {
 // 视频缩略图配置
 const THUMBNAIL_CONFIG = DEFAULT_THUMBNAIL_CONFIG.VIDEO;
 let notFfmpeg = false;
+
+setFfmpegPath();
+
 
 export async function GET(request) {
     if (notFfmpeg) {
@@ -84,6 +88,21 @@ async function responseVideo(fullPath) {
         // 小文件直接读取到内存
         const videoBuffer = await readFileBuffer(fullPath);
         return createMediaResponse(videoBuffer, contentType);
+    }
+}
+
+function setFfmpegPath() {
+    // 如果找不到 ffmpeg 命令, 可以在这里设置 ffmpeg 文件路径
+    const possiblePaths = [
+        process.env.FFMPEG_PATH,
+        // 'C:\\Users\\Administrator\\AppData\\Roaming\\bilibili\\ffmpeg\\ffmpeg.exe',
+    ];
+
+    for (const path of possiblePaths) {
+        if (path && fs.existsSync(path)) {
+            ffmpeg.setFfmpegPath(path);
+            break;
+        }
     }
 }
 
