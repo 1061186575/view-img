@@ -8,17 +8,22 @@
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
+import {createHash} from 'crypto';
+import {THUMBNAIL_CONFIG} from "../lib/config.js";
+import {SUPPORTED_IMAGE_EXTENSIONS} from "../app/media/const.js";
+
+const projectName = 'view-img'
+
+// 设置 mediaDir 目录
+const mediaRootPath = process.env.MEDIA_ROOT_PATH || 'public/media'
+const mediaDir = path.isAbsolute(mediaRootPath) ? path.join(mediaRootPath) : path.join(process.cwd(), mediaRootPath);
+const cacheDir = path.join(process.cwd(), '.next', 'cache', 'thumbnails');
 
 // 缩略图配置（与API路由保持一致）
-const THUMBNAIL_CONFIG = {
-    width: 300,
-    height: 300,
-    quality: 80,
-    format: 'jpeg'
-};
+const THUMBNAIL_CONFIG_IMAGE = THUMBNAIL_CONFIG.IMAGE
 
-// 支持的图片格式
-const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'];
+// 支持的图片格式（与API路由保持一致）
+const IMAGE_EXTENSIONS = SUPPORTED_IMAGE_EXTENSIONS;
 
 // 统计信息
 const stats = {
@@ -62,6 +67,24 @@ function getAllImageFiles(dir, basePath = '') {
     return files;
 }
 
+function md5(str) {
+    return createHash('md5').update(str, 'utf8').digest('hex');
+}
+
+/**
+ * 生成缓存文件路径
+ * @param {string} fullPath - 完整文件路径
+ * @param {object} config - 缩略图配置
+ * @param {string} cacheDir - 缓存目录
+ * @returns {Promise<string>} 缓存文件路径
+ */
+export async function generateCacheFilePath(fullPath, config, cacheDir) {
+    const fileStat = fs.statSync(fullPath);
+    const cacheKey = md5(`${fullPath}_${fileStat.mtimeMs}_${config.width}x${config.height}`)
+    const filename = `${cacheKey}.${config.format}`;
+    return path.join(cacheDir, filename);
+}
+
 /**
  * 生成单个图片的缩略图
  */
@@ -70,16 +93,12 @@ async function generateThumbnail(imageFile) {
         const { fullPath, relativePath } = imageFile;
 
         // 检查缓存目录
-        const cacheDir = path.join(process.cwd(), '.next', 'cache', 'thumbnails');
         if (!fs.existsSync(cacheDir)) {
             fs.mkdirSync(cacheDir, { recursive: true });
         }
 
         // 生成缓存文件名（与API路由逻辑保持一致）
-        const imageStat = fs.statSync(fullPath);
-        const cacheKey = `${relativePath}_${imageStat.mtime.getTime()}_${THUMBNAIL_CONFIG.width}x${THUMBNAIL_CONFIG.height}`;
-        const base64 = Buffer.from(cacheKey).toString('base64');
-        const cacheFilePath = path.join(cacheDir, `${base64.replaceAll('/', '_')}.${THUMBNAIL_CONFIG.format}`);
+        const cacheFilePath = await generateCacheFilePath(fullPath, THUMBNAIL_CONFIG_IMAGE, cacheDir);
 
         // 检查缓存是否已存在
         if (fs.existsSync(cacheFilePath)) {
@@ -91,7 +110,7 @@ async function generateThumbnail(imageFile) {
         const imageBuffer = fs.readFileSync(fullPath);
         const thumbnailBuffer = await sharp(imageBuffer)
             .rotate() // 自动根据 EXIF 方向信息旋转图片
-            .resize(THUMBNAIL_CONFIG.width, THUMBNAIL_CONFIG.height, {
+            .resize(THUMBNAIL_CONFIG_IMAGE.width, THUMBNAIL_CONFIG_IMAGE.height, {
                 fit: 'cover',
                 position: 'center'
             })
@@ -155,12 +174,14 @@ function showProgress(current, total) {
  * 主函数
  */
 async function main() {
+    if (!process.cwd().endsWith(projectName)) {
+        console.log('请在项目根目录下运行本文件')
+        return;
+    }
     console.log('🚀 开始批量生成缩略图...\n');
 
-    // 检查media目录
-    const mediaDir = path.join(process.cwd(), 'public', 'media');
     if (!fs.existsSync(mediaDir)) {
-        console.error('❌ 错误: public/media 目录不存在');
+        console.error(`❌ 错误: ${mediaDir} 目录不存在`);
         process.exit(1);
     }
 
@@ -196,7 +217,6 @@ async function main() {
     console.log('\n');
 
     const duration = Date.now() - stats.startTime;
-    const cacheDir = path.join(process.cwd(), '.next', 'cache', 'thumbnails');
     let cacheDirSize = 0;
 
     // 计算缓存目录大小
@@ -226,8 +246,7 @@ async function main() {
     }
 }
 
-// 运行脚本
-main().catch(error => {
-    console.error('\n💥 脚本执行失败:', error);
-    process.exit(1);
-});
+console.log('mediaDir', mediaDir)
+console.log('cacheDir', cacheDir)
+console.log('3 秒后开始运行...')
+setTimeout(main, 3000)
