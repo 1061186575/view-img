@@ -9,8 +9,9 @@ import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 import {createHash} from 'crypto';
+import ffmpeg from 'fluent-ffmpeg';
 import {THUMBNAIL_CONFIG} from "../lib/config.js";
-import {SUPPORTED_IMAGE_EXTENSIONS} from "../app/media/const.js";
+import {SUPPORTED_IMAGE_EXTENSIONS, SUPPORTED_VIDEO_EXTENSIONS} from "../app/media/const.js";
 
 const projectName = 'view-img'
 
@@ -18,12 +19,15 @@ const projectName = 'view-img'
 const mediaRootPath = process.env.MEDIA_ROOT_PATH || 'public/media'
 const mediaDir = path.isAbsolute(mediaRootPath) ? path.join(mediaRootPath) : path.join(process.cwd(), mediaRootPath);
 const cacheDir = path.join(process.cwd(), '.next', 'cache', 'thumbnails');
+const videoCacheDir = path.join(process.cwd(), '.next', 'cache', 'video-thumbnails');
 
 // 缩略图配置（与API路由保持一致）
 const THUMBNAIL_CONFIG_IMAGE = THUMBNAIL_CONFIG.IMAGE
+const THUMBNAIL_CONFIG_VIDEO = THUMBNAIL_CONFIG.VIDEO
 
 // 支持的图片格式（与API路由保持一致）
 const IMAGE_EXTENSIONS = SUPPORTED_IMAGE_EXTENSIONS;
+const VIDEO_EXTENSIONS = SUPPORTED_VIDEO_EXTENSIONS;
 
 // 统计信息
 const stats = {
@@ -55,6 +59,13 @@ function getAllImageFiles(dir, basePath = '') {
                 if (IMAGE_EXTENSIONS.includes(ext)) {
                     files.push({
                         fullPath,
+                        type: 'image',
+                        relativePath: relativePath.replace(/\\/g, '/') // 统一使用正斜杠
+                    });
+                } else if (VIDEO_EXTENSIONS.includes(ext)) {
+                    files.push({
+                        fullPath,
+                        type: 'video',
                         relativePath: relativePath.replace(/\\/g, '/') // 统一使用正斜杠
                     });
                 }
@@ -90,35 +101,54 @@ export async function generateCacheFilePath(fullPath, config, cacheDir) {
  */
 async function generateThumbnail(imageFile) {
     try {
-        const { fullPath, relativePath } = imageFile;
+        const { fullPath, relativePath, type } = imageFile;
 
-        // 检查缓存目录
-        if (!fs.existsSync(cacheDir)) {
-            fs.mkdirSync(cacheDir, { recursive: true });
+        if (type === 'image') {
+            // 检查缓存目录
+            if (!fs.existsSync(cacheDir)) {
+                fs.mkdirSync(cacheDir, { recursive: true });
+            }
+
+            // 生成缓存文件名（与API路由逻辑保持一致）
+            const cacheFilePath = await generateCacheFilePath(fullPath, THUMBNAIL_CONFIG_IMAGE, cacheDir);
+
+            // 检查缓存是否已存在
+            if (fs.existsSync(cacheFilePath)) {
+                stats.cached++;
+                return { success: true, cached: true, path: relativePath };
+            }
+
+            // 生成图片缩略图
+            const imageBuffer = fs.readFileSync(fullPath);
+            const thumbnailBuffer = await sharp(imageBuffer)
+                .rotate() // 自动根据 EXIF 方向信息旋转图片
+                .resize(THUMBNAIL_CONFIG_IMAGE.width, THUMBNAIL_CONFIG_IMAGE.height, {
+                    fit: 'cover',
+                    position: 'center'
+                })
+                .jpeg({ quality: THUMBNAIL_CONFIG.quality })
+                .toBuffer();
+
+            // 保存缓存
+            fs.writeFileSync(cacheFilePath, thumbnailBuffer);
+        } else if (type === 'video') {
+            // 检查缓存目录
+            if (!fs.existsSync(videoCacheDir)) {
+                fs.mkdirSync(videoCacheDir, { recursive: true });
+            }
+
+            // 生成缓存文件名（与API路由逻辑保持一致）
+            const cacheFilePath = await generateCacheFilePath(fullPath, THUMBNAIL_CONFIG_VIDEO, videoCacheDir);
+
+            // 检查缓存是否已存在
+            if (fs.existsSync(cacheFilePath)) {
+                stats.cached++;
+                return { success: true, cached: true, path: relativePath };
+            }
+
+            // 生成视频缩略图
+            await generateVideoThumbnail(fullPath, cacheFilePath, THUMBNAIL_CONFIG.VIDEO);
         }
-
-        // 生成缓存文件名（与API路由逻辑保持一致）
-        const cacheFilePath = await generateCacheFilePath(fullPath, THUMBNAIL_CONFIG_IMAGE, cacheDir);
-
-        // 检查缓存是否已存在
-        if (fs.existsSync(cacheFilePath)) {
-            stats.cached++;
-            return { success: true, cached: true, path: relativePath };
-        }
-
-        // 生成缩略图
-        const imageBuffer = fs.readFileSync(fullPath);
-        const thumbnailBuffer = await sharp(imageBuffer)
-            .rotate() // 自动根据 EXIF 方向信息旋转图片
-            .resize(THUMBNAIL_CONFIG_IMAGE.width, THUMBNAIL_CONFIG_IMAGE.height, {
-                fit: 'cover',
-                position: 'center'
-            })
-            .jpeg({ quality: THUMBNAIL_CONFIG.quality })
-            .toBuffer();
-
-        // 保存缓存
-        fs.writeFileSync(cacheFilePath, thumbnailBuffer);
 
         stats.generated++;
         return { success: true, cached: false, path: relativePath };
@@ -170,6 +200,44 @@ function showProgress(current, total) {
     process.stdout.write(`\r进度: [${bar}] ${percentage}% (${current}/${total})`);
 }
 
+function setFfmpegPath() {
+    // 如果找不到 ffmpeg 命令, 可以在这里设置 ffmpeg 文件路径
+    const possiblePaths = [
+        process.env.FFMPEG_PATH,
+        'C:\\Users\\Administrator\\AppData\\Roaming\\bilibili\\ffmpeg\\ffmpeg.exe',
+    ];
+
+    for (const path of possiblePaths) {
+        if (path && fs.existsSync(path)) {
+            ffmpeg.setFfmpegPath(path);
+            break;
+        }
+    }
+}
+
+/**
+ * 异步生成视频缩略图
+ * @param {string} videoPath - 视频文件路径
+ * @param {string} outputPath - 输出缩略图路径
+ * @param {object} config - 缩略图配置
+ * @returns {Promise<void>} 生成完成的Promise
+ */
+async function generateVideoThumbnail(videoPath, outputPath, config) {
+    return new Promise((resolve, reject) => {
+        ffmpeg(videoPath)
+            .frames(1) // 只取一帧
+            .size(`${config.width}x${config.height}`) // 指定尺寸
+            .on('end', () => {
+                resolve();
+            })
+            .on('error', (err) => {
+                reject(new Error(`FFmpeg processing failed: ${err.message}`));
+            })
+            .save(outputPath);
+    });
+}
+
+
 /**
  * 主函数
  */
@@ -178,6 +246,8 @@ async function main() {
         console.log('请在项目根目录下运行本文件')
         return;
     }
+    setFfmpegPath();
+
     console.log('🚀 开始批量生成缩略图...\n');
 
     if (!fs.existsSync(mediaDir)) {
@@ -217,29 +287,15 @@ async function main() {
     console.log('\n');
 
     const duration = Date.now() - stats.startTime;
-    let cacheDirSize = 0;
-
-    // 计算缓存目录大小
-    try {
-        const cacheFiles = fs.readdirSync(cacheDir);
-        for (const file of cacheFiles) {
-            const filePath = path.join(cacheDir, file);
-            const stat = fs.statSync(filePath);
-            cacheDirSize += stat.size;
-        }
-    } catch (error) {
-        // 忽略错误
-    }
 
     // 显示完成统计
     console.log('✅ 批量生成完成!\n');
-    console.log('📊 统计信息:');
+    console.log('统计信息:');
     console.log(`   总文件数: ${stats.total}`);
     console.log(`   新生成: ${stats.generated}`);
     console.log(`   已缓存: ${stats.cached}`);
     console.log(`   处理失败: ${stats.errors}`);
     console.log(`   用时: ${formatDuration(duration)}`);
-    console.log(`   缓存目录大小: ${formatFileSize(cacheDirSize)}`);
 
     if (stats.errors > 0) {
         console.log('\n⚠️  部分文件处理失败，请检查上方的错误信息');
@@ -248,5 +304,6 @@ async function main() {
 
 console.log('mediaDir', mediaDir)
 console.log('cacheDir', cacheDir)
+console.log('videoCacheDir', videoCacheDir)
 console.log('3 秒后开始运行...')
 setTimeout(main, 3000)
