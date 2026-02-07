@@ -42,7 +42,7 @@ export async function GET(request) {
             const cacheDir = await ensureCacheDir('thumbnails');
 
             // 生成缓存文件名
-            const cacheFilePath = await generateCacheFilePath(imagePath, fullPath, THUMBNAIL_CONFIG, cacheDir);
+            const cacheFilePath = await generateCacheFilePath(fullPath, THUMBNAIL_CONFIG, cacheDir);
 
             // 检查缓存是否存在
             const cachedResponse = await getCachedResponse(cacheFilePath, `image/${THUMBNAIL_CONFIG.format}`);
