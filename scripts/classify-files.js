@@ -4,7 +4,7 @@ const { existsSync } = require('fs');
 
 /**
  * 把 SOURCE_DIR 里面的文件按更新时间排序, 然后分类放到 TARGET_DIR 里面,
- * 同时确保 TARGET_DIR 里面的子目录文件数量 <= MAX_FILE_COUNT 个, 大小 <= MAX_TOTAL_SIZE bytes
+ * 同时确保 TARGET_DIR 里面的子目录 文件数量 <= MAX_FILE_COUNT 个 && 大小 <= MAX_TOTAL_SIZE bytes
  * @type {string}
  */
 
@@ -13,7 +13,8 @@ const SOURCE_DIR = 'D:\\SOURCE_DIR';
 const TARGET_DIR = 'D:\\TARGET_DIR';
 const SUB_DIR_NAME = 'dir';
 const MAX_FILE_COUNT = 1000;
-const MAX_TOTAL_SIZE = 3.95 * 1024 * 1024 * 1024;
+const MAX_TOTAL_SIZE = 1024 * 1024 * 1024 * 20; // GB
+const isRename = true // rename or copy
 
 async function main() {
     try {
@@ -141,10 +142,13 @@ async function createAndCopyBatch(batch, dirIndex) {
                 counter++;
             }
 
-            // await fs.rename(file.path, finalTargetPath, (err) => {
-            //     if (err) console.log('err', err);
-            // });
-            await fs.copyFile(file.path, finalTargetPath);
+            if (isRename) {
+                await fs.rename(file.path, finalTargetPath, (err) => {
+                    if (err) console.log('err', err);
+                });
+            } else {
+                await fs.copyFile(file.path, finalTargetPath);
+            }
         } catch (error) {
             console.error(`  复制文件失败: ${file.name}`, error.message);
         }
