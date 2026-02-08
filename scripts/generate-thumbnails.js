@@ -3,6 +3,7 @@
 /**
  * 批量生成缩略图脚本
  * 遍历 public/media 目录下的所有图片，预先生成缩略图
+ * 使用: MEDIA_ROOT_PATH=/home/admin/Desktop/project/media node scripts/generate-thumbnails.js
  */
 
 import fs from 'fs';
@@ -13,11 +14,11 @@ import ffmpeg from 'fluent-ffmpeg';
 import {THUMBNAIL_CONFIG} from "../lib/config.js";
 import {SUPPORTED_IMAGE_EXTENSIONS, SUPPORTED_VIDEO_EXTENSIONS} from "../app/media/const.js";
 
+const MEDIA_ROOT_PATH = process.env.MEDIA_ROOT_PATH || 'public/media'
 const projectName = 'view-img'
 
 // 设置 mediaDir 目录
-const mediaRootPath = process.env.MEDIA_ROOT_PATH || 'public/media'
-const mediaDir = path.isAbsolute(mediaRootPath) ? path.join(mediaRootPath) : path.join(process.cwd(), mediaRootPath);
+const mediaDir = path.resolve(process.cwd(), MEDIA_ROOT_PATH);
 const cacheDir = path.join(process.cwd(), '.next', 'cache', 'thumbnails');
 const videoCacheDir = path.join(process.cwd(), '.next', 'cache', 'video-thumbnails');
 
@@ -305,5 +306,5 @@ async function main() {
 console.log('mediaDir', mediaDir)
 console.log('cacheDir', cacheDir)
 console.log('videoCacheDir', videoCacheDir)
-console.log('3 秒后开始运行...')
-setTimeout(main, 3000)
+console.log('1 秒后开始运行...')
+setTimeout(main, 1000)
