@@ -11,9 +11,11 @@ import path from 'path';
 import sharp from 'sharp';
 import {createHash} from 'crypto';
 import ffmpeg from 'fluent-ffmpeg';
+import heicConvert from 'heic-convert';
 import {THUMBNAIL_CONFIG} from "../lib/config.js";
 import {SUPPORTED_IMAGE_EXTENSIONS, SUPPORTED_VIDEO_EXTENSIONS} from "../app/media/const.js";
 
+// TODO 支持读取 .env 文件
 const MEDIA_ROOT_PATH = process.env.MEDIA_ROOT_PATH || 'public/media'
 const projectName = 'view-img'
 
@@ -120,7 +122,8 @@ async function generateThumbnail(imageFile) {
             }
 
             // 生成图片缩略图
-            const imageBuffer = fs.readFileSync(fullPath);
+            let imageBuffer = fs.readFileSync(fullPath);
+            imageBuffer = await heic2Jpeg(fullPath, imageBuffer);
             const thumbnailBuffer = await sharp(imageBuffer)
                 .rotate() // 自动根据 EXIF 方向信息旋转图片
                 .resize(THUMBNAIL_CONFIG_IMAGE.width, THUMBNAIL_CONFIG_IMAGE.height, {
@@ -237,6 +240,20 @@ async function generateVideoThumbnail(videoPath, outputPath, config) {
             .save(outputPath);
     });
 }
+
+async function heic2Jpeg(fullPath, buffer) {
+    // 如果是 HEIC / HEIF，就转成 JPEG buffer
+    const fp = fullPath.toLowerCase();
+    if (fp.endsWith('.heic') || fp.endsWith('.heif')) {
+        return await heicConvert({
+            buffer,
+            format: 'JPEG',
+            quality: 0.8
+        });
+    }
+    return buffer;
+}
+
 
 
 /**
