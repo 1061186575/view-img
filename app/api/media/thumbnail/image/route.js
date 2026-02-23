@@ -10,7 +10,8 @@ import {
     saveCacheFile,
     readFileBuffer,
     shouldUseStream,
-    DEFAULT_THUMBNAIL_CONFIG
+    DEFAULT_THUMBNAIL_CONFIG,
+    heic2Jpeg,
 } from '@/lib/thumbnail-utils';
 
 // 图片缩略图配置
@@ -51,7 +52,10 @@ export async function GET(request) {
             }
 
             // 生成缩略图
-            const imageBuffer = await readFileBuffer(fullPath);
+            let imageBuffer = await readFileBuffer(fullPath);
+
+            imageBuffer = await heic2Jpeg(fullPath, imageBuffer);
+
             const thumbnailBuffer = await sharp(imageBuffer)
                 .rotate() // 自动根据 EXIF 方向信息旋转图片
                 .resize(THUMBNAIL_CONFIG.width, THUMBNAIL_CONFIG.height, {

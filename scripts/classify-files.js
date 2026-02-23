@@ -4,7 +4,7 @@ const { existsSync } = require('fs');
 
 /**
  * 把 SOURCE_DIR 里面的文件按更新时间排序, 然后分类放到 TARGET_DIR 里面,
- * 同时确保 TARGET_DIR 里面的子目录 文件数量 <= MAX_FILE_COUNT 个 && 大小 <= MAX_TOTAL_SIZE bytes
+ * 同时确保 TARGET_DIR 里面的子目录 文件数量 <= MAX_FILE_COUNT && 大小 <= MAX_TOTAL_SIZE_GB
  * @type {string}
  */
 
@@ -12,8 +12,8 @@ const { existsSync } = require('fs');
 const SOURCE_DIR = 'D:\\SOURCE_DIR';
 const TARGET_DIR = 'D:\\TARGET_DIR';
 const SUB_DIR_NAME = 'dir';
-const MAX_FILE_COUNT = 1000;
-const MAX_TOTAL_SIZE = 1024 * 1024 * 1024 * 20; // GB
+const MAX_FILE_COUNT = 500;
+const MAX_TOTAL_SIZE_GB = 4;
 const isRename = true // rename or copy
 
 async function main() {
@@ -84,7 +84,7 @@ async function classifyFiles(files) {
 
         // 检查是否达到限制条件
         if (currentBatch.fileCount >= MAX_FILE_COUNT ||
-            (currentBatch.totalSize + file.size) > MAX_TOTAL_SIZE) {
+            (currentBatch.totalSize + file.size) > MAX_TOTAL_SIZE_GB * 1024 * 1024 * 1024) {
 
             // 创建当前批次的目录并复制文件
             await createAndCopyBatch(currentBatch, currentDirIndex);

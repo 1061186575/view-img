@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import { createReadStream } from 'fs';
 import path from 'path';
 import { MEDIA_CONFIG } from "@/lib/config";
-import { getContentType, readFileBuffer, shouldUseStream } from "@/lib/thumbnail-utils";
+import { getContentType, heic2Jpeg, readFileBuffer, shouldUseStream } from "@/lib/thumbnail-utils";
 
 export async function GET(request) {
     try {
@@ -102,12 +102,15 @@ export async function GET(request) {
             });
         } else {
             // 小文件直接读取到内存，响应速度更快
-            const fileBuffer = await readFileBuffer(fullPath);
+            let fileBuffer = await readFileBuffer(fullPath);
+
+            fileBuffer = await heic2Jpeg(fullPath, fileBuffer);
+            const newLength = fileBuffer.length.toString();
 
             return new NextResponse(fileBuffer, {
                 headers: {
                     'Content-Type': mimeType,
-                    'Content-Length': fileSize.toString(),
+                    'Content-Length': newLength,
                     'Accept-Ranges': 'bytes',
                     'Cache-Control': 'public, max-age=604800', // 缓存7天
                 },
