@@ -17,7 +17,55 @@ import {Worker} from 'worker_threads';
 import {THUMBNAIL_CONFIG} from "../lib/config.js";
 import {SUPPORTED_IMAGE_EXTENSIONS, SUPPORTED_VIDEO_EXTENSIONS} from "../app/media/const.js";
 
-const MEDIA_ROOT_PATH = process.env.MEDIA_ROOT_PATH || 'public/media'
+/**
+ * 读取 .env 文件配置
+ * @param {string} envPath - .env 文件路径
+ * @returns {Object} 环境变量对象
+ */
+function loadEnvFile(envPath = '.env') {
+    const envConfig = {};
+
+    try {
+        const envContent = fs.readFileSync(envPath, 'utf8');
+
+        // 按行分割并处理每一行
+        envContent.split('\n').forEach(line => {
+            // 去除空白字符
+            line = line.trim();
+
+            // 跳过空行和注释行
+            if (!line || line.startsWith('#')) {
+                return;
+            }
+
+            // 解析 KEY=VALUE 格式
+            const equalIndex = line.indexOf('=');
+            if (equalIndex > 0) {
+                const key = line.substring(0, equalIndex).trim();
+                let value = line.substring(equalIndex + 1).trim();
+
+                // 去除引号
+                if ((value.startsWith('"') && value.endsWith('"')) ||
+                    (value.startsWith("'") && value.endsWith("'"))) {
+                    value = value.slice(1, -1);
+                }
+
+                envConfig[key] = value;
+            }
+        });
+    } catch (error) {
+        // 如果 .env 文件不存在或读取失败，使用默认值
+        console.log(`📝 未找到 .env 文件，使用默认配置`);
+    }
+
+    return envConfig;
+}
+
+// 加载 .env 配置
+const envConfig = loadEnvFile();
+
+// 优先级：环境变量 > .env 文件 > 默认值
+const MEDIA_ROOT_PATH = process.env.MEDIA_ROOT_PATH || envConfig.MEDIA_ROOT_PATH || 'public/media';
 const projectName = 'view-img'
 
 // 多线程配置
@@ -511,6 +559,7 @@ async function main() {
     setFfmpegPath();
 
     console.log('🚀 开始批量生成缩略图...\n');
+    console.log(`📁 媒体目录: ${MEDIA_ROOT_PATH}`);
     console.log(`🧠 CPU 信息: ${numCPUs} 核心，使用 ${WORKER_COUNT} 个工作线程\n`);
 
     if (!fs.existsSync(mediaDir)) {
