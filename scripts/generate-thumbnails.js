@@ -8,14 +8,12 @@
 
 import fs from 'fs';
 import path from 'path';
-import sharp from 'sharp';
-import {createHash} from 'crypto';
+import { createHash } from 'crypto';
 import ffmpeg from 'fluent-ffmpeg';
-import heicConvert from 'heic-convert';
 import os from 'os';
-import {Worker} from 'worker_threads';
-import {THUMBNAIL_CONFIG} from "../lib/config.js";
-import {SUPPORTED_IMAGE_EXTENSIONS, SUPPORTED_VIDEO_EXTENSIONS} from "../app/media/const.js";
+import { Worker } from 'worker_threads';
+import { THUMBNAIL_CONFIG } from "../lib/config.js";
+import { SUPPORTED_IMAGE_EXTENSIONS, SUPPORTED_VIDEO_EXTENSIONS } from "../app/media/const.js";
 
 // 加载 .env 配置
 const envConfig = loadEnvFile();
@@ -25,21 +23,9 @@ const MEDIA_ROOT_PATH = process.env.MEDIA_ROOT_PATH || envConfig.MEDIA_ROOT_PATH
 const FFMPEG_PATH = process.env.FFMPEG_PATH || envConfig.MEDIA_ROOT_PATH;
 const projectName = 'view-img'
 
-// 多线程配置
-const numCPUs = os.cpus().length;
-const MAX_WORKERS = Math.min(8, Math.max(1, numCPUs - 1)); // 最多8个工作线程
-
 // 设置 缓存 目录
 const cacheDir = path.join(process.cwd(), '.next', 'cache', 'thumbnails');
 const videoCacheDir = path.join(process.cwd(), '.next', 'cache', 'video-thumbnails');
-
-// 缩略图配置（与API路由保持一致）
-const THUMBNAIL_CONFIG_IMAGE = THUMBNAIL_CONFIG.IMAGE
-const THUMBNAIL_CONFIG_VIDEO = THUMBNAIL_CONFIG.VIDEO
-
-// 支持的图片格式（与API路由保持一致）
-const IMAGE_EXTENSIONS = SUPPORTED_IMAGE_EXTENSIONS;
-const VIDEO_EXTENSIONS = SUPPORTED_VIDEO_EXTENSIONS;
 
 // 统计信息
 const stats = {
@@ -49,6 +35,12 @@ const stats = {
     errors: 0,
     startTime: Date.now()
 };
+
+// 多线程配置
+const numCPUs = os.cpus().length;
+const MAX_WORKERS = Math.max(1, numCPUs - 1);
+let workerPool = [];
+let currentWorkerIndex = 0;
 
 /**
  * 读取 .env 文件配置
@@ -112,13 +104,13 @@ function getAllImageFiles(dir, basePath = '') {
                 files.push(...getAllImageFiles(fullPath, relativePath));
             } else if (entry.isFile()) {
                 const ext = path.extname(entry.name).toLowerCase();
-                if (IMAGE_EXTENSIONS.includes(ext)) {
+                if (SUPPORTED_IMAGE_EXTENSIONS.includes(ext)) {
                     files.push({
                         fullPath,
                         type: 'image',
                         relativePath: relativePath.replace(/\\/g, '/') // 统一使用正斜杠
                     });
-                } else if (VIDEO_EXTENSIONS.includes(ext)) {
+                } else if (SUPPORTED_VIDEO_EXTENSIONS.includes(ext)) {
                     files.push({
                         fullPath,
                         type: 'video',
@@ -137,29 +129,6 @@ function getAllImageFiles(dir, basePath = '') {
 function md5(str) {
     return createHash('md5').update(str, 'utf8').digest('hex');
 }
-
-/**
- * 将 HEIC/HEIF 格式转换为 JPEG
- * @param {string} fullPath - 完整文件路径
- * @param {Buffer} buffer - 文件缓冲区
- * @returns {Promise<Buffer>} 转换后的缓冲区
- */
-async function heic2Jpeg(fullPath, buffer) {
-    // 如果是 HEIC / HEIF，就转成 JPEG buffer
-    const fp = fullPath.toLowerCase();
-    if (fp.endsWith('.heic') || fp.endsWith('.heif')) {
-        return await heicConvert({
-            buffer,
-            format: 'JPEG',
-            quality: 1
-        });
-    }
-    return buffer;
-}
-
-// 缩略图生成工作线程池
-let workerPool = [];
-let currentWorkerIndex = 0;
 
 /**
  * 创建缩略图生成工作线程
@@ -208,8 +177,8 @@ function generateThumbnailInWorker(imageFile) {
             taskId,
             cacheDir,
             videoCacheDir,
-            THUMBNAIL_CONFIG_IMAGE,
-            THUMBNAIL_CONFIG_VIDEO,
+            THUMBNAIL_CONFIG_IMAGE: THUMBNAIL_CONFIG.IMAGE,
+            THUMBNAIL_CONFIG_VIDEO: THUMBNAIL_CONFIG.VIDEO,
             THUMBNAIL_CONFIG
         });
     });
@@ -227,85 +196,6 @@ export async function generateCacheFilePath(fullPath, config, cacheDir) {
     const cacheKey = md5(`${fullPath}_${fileStat.mtimeMs}_${config.width}x${config.height}`)
     const filename = `${cacheKey}.${config.format}`;
     return path.join(cacheDir, filename);
-}
-
-/**
- * 生成单个图片的缩略图
- */
-async function generateThumbnail(imageFile) {
-    try {
-        const { fullPath, relativePath, type } = imageFile;
-
-        if (type === 'image') {
-            // 检查缓存目录
-            if (!fs.existsSync(cacheDir)) {
-                fs.mkdirSync(cacheDir, { recursive: true });
-            }
-
-            // 生成缓存文件名（与API路由逻辑保持一致）
-            const cacheFilePath = await generateCacheFilePath(fullPath, THUMBNAIL_CONFIG_IMAGE, cacheDir);
-
-            // 检查缓存是否已存在
-            if (fs.existsSync(cacheFilePath)) {
-                stats.cached++;
-                return { success: true, cached: true, path: relativePath };
-            }
-
-            // 生成图片缩略图，支持 HEIC 转换
-            let imageBuffer = fs.readFileSync(fullPath);
-            imageBuffer = await heic2Jpeg(fullPath, imageBuffer);
-            const thumbnailBuffer = await sharp(imageBuffer)
-                .rotate() // 自动根据 EXIF 方向信息旋转图片
-                .resize(THUMBNAIL_CONFIG_IMAGE.width, THUMBNAIL_CONFIG_IMAGE.height, {
-                    fit: 'cover',
-                    position: 'center'
-                })
-                .jpeg({ quality: THUMBNAIL_CONFIG.quality })
-                .toBuffer();
-
-            // 保存缓存
-            fs.writeFileSync(cacheFilePath, thumbnailBuffer);
-        } else if (type === 'video') {
-            // 检查缓存目录
-            if (!fs.existsSync(videoCacheDir)) {
-                fs.mkdirSync(videoCacheDir, { recursive: true });
-            }
-
-            // 生成缓存文件名（与API路由逻辑保持一致）
-            const cacheFilePath = await generateCacheFilePath(fullPath, THUMBNAIL_CONFIG_VIDEO, videoCacheDir);
-
-            // 检查缓存是否已存在
-            if (fs.existsSync(cacheFilePath)) {
-                stats.cached++;
-                return { success: true, cached: true, path: relativePath };
-            }
-
-            // 生成视频缩略图
-            await generateVideoThumbnail(fullPath, cacheFilePath, THUMBNAIL_CONFIG.VIDEO);
-        }
-
-        stats.generated++;
-        return { success: true, cached: false, path: relativePath };
-
-    } catch (error) {
-        stats.errors++;
-        return {
-            success: false,
-            error: error.message,
-            path: imageFile.relativePath
-        };
-    }
-}
-
-/**
- * 格式化文件大小
- */
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 /**
@@ -340,28 +230,6 @@ function setFfmpegPath() {
     if (FFMPEG_PATH && fs.existsSync(absPath)) {
         ffmpeg.setFfmpegPath(absPath);
     }
-}
-
-/**
- * 异步生成视频缩略图
- * @param {string} videoPath - 视频文件路径
- * @param {string} outputPath - 输出缩略图路径
- * @param {object} config - 缩略图配置
- * @returns {Promise<void>} 生成完成的Promise
- */
-async function generateVideoThumbnail(videoPath, outputPath, config) {
-    return new Promise((resolve, reject) => {
-        ffmpeg(videoPath)
-            .frames(1) // 只取一帧
-            .size(`${config.width}x${config.height}`) // 指定尺寸
-            .on('end', () => {
-                resolve();
-            })
-            .on('error', (err) => {
-                reject(new Error(`FFmpeg processing failed: ${err.message}`));
-            })
-            .save(outputPath);
-    });
 }
 
 /**
@@ -448,7 +316,6 @@ async function processConcurrentTasks(imageFiles, maxConcurrentTasks = 40) {
     }
 }
 
-
 /**
  * 主函数
  */
@@ -461,13 +328,10 @@ async function main() {
 
     const mediaDir = path.resolve(MEDIA_ROOT_PATH);
 
-    console.log('mediaDir', mediaDir);
-    console.log('cacheDir', cacheDir);
-    console.log('videoCacheDir', videoCacheDir);
-
     console.log('开始批量生成缩略图...\n');
     console.log(`媒体目录: ${mediaDir}`);
-    console.log(`CPU ${numCPUs} 个核心，使用 ${MAX_WORKERS} 个工作线程\n`);
+    console.log('cacheDir', cacheDir);
+    console.log('videoCacheDir', videoCacheDir);
 
     if (!fs.existsSync(mediaDir)) {
         console.error(`❌ 错误: ${mediaDir} 目录不存在`);
@@ -487,22 +351,25 @@ async function main() {
     console.log(`📊 找到 ${stats.total} 个媒体文件\n`);
 
     // 初始化工作线程池
+    console.log(`使用 ${MAX_WORKERS} 个工作线程\n`);
     initWorkerPool();
 
+    // 显示进度
+    showProgress(0, stats.total);
+
     // 使用并发任务池处理所有文件
-    await processConcurrentTasks(imageFiles, 40);
+    await processConcurrentTasks(imageFiles, 10);
 
     // 清理工作线程池
     cleanupWorkers();
 
     // 完成统计
     showProgress(stats.total, stats.total);
-    console.log('\n');
 
     const duration = Date.now() - stats.startTime;
 
     // 显示完成统计
-    console.log('✅ 批量生成完成!\n');
+    console.log('\n✅ 批量生成完成!\n');
     console.log('统计信息:');
     console.log(`   总文件数: ${stats.total}`);
     console.log(`   新生成: ${stats.generated}`);

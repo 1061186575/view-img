@@ -8,10 +8,10 @@
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
-import {createHash} from 'crypto';
+import { createHash } from 'crypto';
 import ffmpeg from 'fluent-ffmpeg';
 import heicConvert from 'heic-convert';
-import {parentPort, workerData} from 'worker_threads';
+import { parentPort } from 'worker_threads';
 
 /**
  * MD5 哈希函数
@@ -34,7 +34,7 @@ async function heic2Jpeg(fullPath, buffer) {
         return await heicConvert({
             buffer,
             format: 'JPEG',
-            quality: 1
+            quality: 0.8
         });
     }
     return buffer;
