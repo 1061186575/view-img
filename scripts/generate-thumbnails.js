@@ -374,6 +374,80 @@ function cleanupWorkers() {
     workerPool = [];
 }
 
+/**
+ * 使用并发任务池处理所有文件
+ * @param {Array} imageFiles - 要处理的文件列表
+ * @param {number} maxConcurrentTasks - 最大并发任务数
+ * @returns {Promise<void>} 处理完成的Promise
+ */
+async function processConcurrentTasks(imageFiles, maxConcurrentTasks = 40) {
+    let processed = 0;
+    let currentIndex = 0;
+    const runningTasks = new Set();
+
+    // 处理单个任务的函数
+    const processTask = async (imageFile) => {
+        try {
+            const result = await generateThumbnailInWorker(imageFile);
+
+            // 更新统计信息
+            if (result.cached) {
+                stats.cached++;
+            } else {
+                stats.generated++;
+            }
+
+            if (!result.success) {
+                stats.errors++;
+                console.log(`\n❌ 处理失败: ${result.path} - ${result.error}`);
+            }
+        } catch (error) {
+            stats.errors++;
+            console.log(`\n❌ 处理失败: ${imageFile.relativePath} - ${error.message}`);
+        }
+
+        processed++;
+        showProgress(processed, stats.total);
+    };
+
+    // 添加新任务到任务池
+    const addTask = () => {
+        if (currentIndex >= imageFiles.length) {
+            return null;
+        }
+
+        const imageFile = imageFiles[currentIndex++];
+        const taskPromise = processTask(imageFile);
+
+        runningTasks.add(taskPromise);
+
+        // 任务完成后从运行中的任务集合中移除
+        taskPromise.finally(() => {
+            runningTasks.delete(taskPromise);
+        });
+
+        return taskPromise;
+    };
+
+    // 初始化任务池 - 启动初始的并发任务
+    for (let i = 0; i < Math.min(maxConcurrentTasks, imageFiles.length); i++) {
+        addTask();
+    }
+
+    // 持续处理直到所有任务完成
+    while (runningTasks.size > 0 || currentIndex < imageFiles.length) {
+        // 等待至少一个任务完成
+        if (runningTasks.size > 0) {
+            await Promise.race(runningTasks);
+        }
+
+        // 如果还有未处理的文件，并且当前运行的任务数少于最大值，则添加新任务
+        while (runningTasks.size < maxConcurrentTasks && currentIndex < imageFiles.length) {
+            addTask();
+        }
+    }
+}
+
 
 /**
  * 主函数
@@ -393,7 +467,7 @@ async function main() {
 
     console.log('开始批量生成缩略图...\n');
     console.log(`媒体目录: ${mediaDir}`);
-    console.log(`CPU ${numCPUs} 个核心，使用 ${MAX_WORKERS} 个工作线程并行处理\n`);
+    console.log(`CPU ${numCPUs} 个核心，使用 ${MAX_WORKERS} 个工作线程\n`);
 
     if (!fs.existsSync(mediaDir)) {
         console.error(`❌ 错误: ${mediaDir} 目录不存在`);
@@ -415,32 +489,8 @@ async function main() {
     // 初始化工作线程池
     initWorkerPool();
 
-    // 使用工作线程并行处理所有文件
-    let processed = 0;
-
-    for (const imageFile of imageFiles) {
-        showProgress(processed, stats.total);
-        try {
-            const result = await generateThumbnailInWorker(imageFile);
-
-            // 更新统计信息
-            if (result.cached) {
-                stats.cached++;
-            } else {
-                stats.generated++;
-            }
-
-            if (!result.success) {
-                stats.errors++;
-                console.log(`\n❌ 处理失败: ${result.path} - ${result.error}`);
-            }
-        } catch (error) {
-            stats.errors++;
-            console.log(`\n❌ 处理失败: ${imageFile.relativePath} - ${error.message}`);
-        }
-
-        processed++;
-    }
+    // 使用并发任务池处理所有文件
+    await processConcurrentTasks(imageFiles, 40);
 
     // 清理工作线程池
     cleanupWorkers();
