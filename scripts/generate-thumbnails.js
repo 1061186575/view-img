@@ -312,7 +312,7 @@ function formatFileSize(bytes) {
  * 格式化持续时间
  */
 function formatDuration(ms) {
-    const seconds = Math.floor(ms / 1000);
+    const seconds = Number((ms / 1000).toFixed(2));
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
 
