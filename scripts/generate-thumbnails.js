@@ -141,7 +141,7 @@ function createThumbnailWorker() {
 /**
  * 初始化缩略图生成工作线程池
  */
-function initWorkerPool() {
+function initWorkerPool(MAX_WORKERS) {
     for (let i = 0; i < MAX_WORKERS; i++) {
         workerPool.push(createThumbnailWorker());
     }
@@ -162,6 +162,7 @@ function generateThumbnailInWorker(imageFile) {
 
         const messageHandler = (data) => {
             if (data.taskId === taskId) {
+                // 确保每个任务的消息只被处理一次
                 worker.off('message', messageHandler);
                 if (data.success) {
                     resolve(data.result);
@@ -182,20 +183,6 @@ function generateThumbnailInWorker(imageFile) {
             THUMBNAIL_CONFIG
         });
     });
-}
-
-/**
- * 生成缓存文件路径
- * @param {string} fullPath - 完整文件路径
- * @param {object} config - 缩略图配置
- * @param {string} cacheDir - 缓存目录
- * @returns {Promise<string>} 缓存文件路径
- */
-export async function generateCacheFilePath(fullPath, config, cacheDir) {
-    const fileStat = fs.statSync(fullPath);
-    const cacheKey = md5(`${fullPath}_${fileStat.mtimeMs}_${config.width}x${config.height}`)
-    const filename = `${cacheKey}.${config.format}`;
-    return path.join(cacheDir, filename);
 }
 
 /**
@@ -245,7 +232,7 @@ function cleanupWorkers() {
 /**
  * 使用并发任务池处理所有文件
  * @param {Array} imageFiles - 要处理的文件列表
- * @param {number} maxConcurrentTasks - 最大并发任务数
+ * @param {number} maxConcurrentTasks - 最大并发任务数, 如果子线程是 CPU 密集型任务或同步任务, 可以将此值设置为 CPU 核心数, 否则可以设置大一点
  * @returns {Promise<void>} 处理完成的Promise
  */
 async function processConcurrentTasks(imageFiles, maxConcurrentTasks = 40) {
@@ -352,13 +339,11 @@ async function main() {
 
     // 初始化工作线程池
     console.log(`使用 ${MAX_WORKERS} 个工作线程\n`);
-    initWorkerPool();
-
-    // 显示进度
     showProgress(0, stats.total);
+    initWorkerPool(MAX_WORKERS);
 
     // 使用并发任务池处理所有文件
-    await processConcurrentTasks(imageFiles, 10);
+    await processConcurrentTasks(imageFiles, MAX_WORKERS * 2);
 
     // 清理工作线程池
     cleanupWorkers();
