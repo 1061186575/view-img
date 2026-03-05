@@ -138,70 +138,64 @@ function md5(str) {
     return createHash('md5').update(str, 'utf8').digest('hex');
 }
 
-// HEIC 工作线程队列管理
-let heicWorkerPool = [];
+/**
+ * 将 HEIC/HEIF 格式转换为 JPEG
+ * @param {string} fullPath - 完整文件路径
+ * @param {Buffer} buffer - 文件缓冲区
+ * @returns {Promise<Buffer>} 转换后的缓冲区
+ */
+async function heic2Jpeg(fullPath, buffer) {
+    // 如果是 HEIC / HEIF，就转成 JPEG buffer
+    const fp = fullPath.toLowerCase();
+    if (fp.endsWith('.heic') || fp.endsWith('.heif')) {
+        return await heicConvert({
+            buffer,
+            format: 'JPEG',
+            quality: 1
+        });
+    }
+    return buffer;
+}
+
+// 缩略图生成工作线程池
+let workerPool = [];
 let currentWorkerIndex = 0;
 
 /**
- * 创建 HEIC 转换工作线程
+ * 创建缩略图生成工作线程
  * @returns {Worker} 工作线程实例
  */
-function createHeicWorker() {
-    return new Worker(`
-        const { parentPort } = require('worker_threads');
-        const heicConvert = require('heic-convert');
-
-        parentPort.on('message', async (data) => {
-            try {
-                const { buffer, taskId } = data;
-                const jpegBuffer = await heicConvert({
-                    buffer,
-                    format: 'JPEG',
-                    quality: 1
-                });
-                parentPort.postMessage({
-                    success: true,
-                    taskId,
-                    buffer: jpegBuffer
-                });
-            } catch (error) {
-                parentPort.postMessage({
-                    success: false,
-                    taskId,
-                    error: error.message
-                });
-            }
-        });
-    `, { eval: true });
+function createThumbnailWorker() {
+    return new Worker(new URL('./thumbnail-worker.js', import.meta.url));
 }
 
 /**
- * 初始化 HEIC 工作线程池
+ * 初始化缩略图生成工作线程池
  */
-function initHeicWorkerPool() {
+function initWorkerPool() {
     for (let i = 0; i < MAX_HEIC_WORKERS; i++) {
-        heicWorkerPool.push(createHeicWorker());
+        workerPool.push(createThumbnailWorker());
     }
 }
 
 /**
- * 使用工作线程转换 HEIC
- * @param {Buffer} buffer - HEIC 文件缓冲区
- * @returns {Promise<Buffer>} 转换后的 JPEG 缓冲区
+ * 使用工作线程生成缩略图
+ * @param {Object} imageFile - 图片文件信息
+ * @returns {Promise<Object>} 处理结果
  */
-function convertHeicInWorker(buffer) {
+function generateThumbnailInWorker(imageFile) {
     return new Promise((resolve, reject) => {
-        const worker = heicWorkerPool[currentWorkerIndex];
+        const worker = workerPool[currentWorkerIndex];
         const taskId = Date.now() + Math.random();
 
         // 轮询使用不同的工作线程
-        currentWorkerIndex = (currentWorkerIndex + 1) % heicWorkerPool.length;
+        currentWorkerIndex = (currentWorkerIndex + 1) % workerPool.length;
 
         const messageHandler = (data) => {
             if (data.taskId === taskId) {
                 worker.off('message', messageHandler);
                 if (data.success) {
-                    resolve(data.buffer);
+                    resolve(data.result);
                 } else {
                     reject(new Error(data.error));
                 }
@@ -209,23 +203,16 @@ function convertHeicInWorker(buffer) {
         };
 
         worker.on('message', messageHandler);
-        worker.postMessage({ buffer, taskId });
+        worker.postMessage({
+            imageFile,
+            taskId,
+            cacheDir,
+            videoCacheDir,
+            THUMBNAIL_CONFIG_IMAGE,
+            THUMBNAIL_CONFIG_VIDEO,
+            THUMBNAIL_CONFIG
+        });
     });
-}
-
-/**
- * 将 HEIC/HEIF 格式转换为 JPEG（带多线程优化）
- * @param {string} fullPath - 完整文件路径
- * @param {Buffer} buffer - 文件缓冲区
- * @returns {Promise<Buffer>} 转换后的缓冲区
- */
-async function heic2Jpeg(fullPath, buffer) {
-    const fp = fullPath.toLowerCase();
-    if (fp.endsWith('.heic') || fp.endsWith('.heif')) {
-        // 使用工作线程进行 HEIC 转换
-        return await convertHeicInWorker(buffer);
-    }
-    return buffer;
 }
 
 /**
@@ -385,13 +372,13 @@ async function generateVideoThumbnail(videoPath, outputPath, config) {
 }
 
 /**
- * 清理 HEIC 工作线程池
+ * 清理工作线程池
  */
-function cleanupHeicWorkers() {
-    heicWorkerPool.forEach(worker => {
+function cleanupWorkers() {
+    workerPool.forEach(worker => {
         worker.terminate();
     });
-    heicWorkerPool = [];
+    workerPool = [];
 }
 
 
@@ -407,7 +394,7 @@ async function main() {
 
     console.log('🚀 开始批量生成缩略图...\n');
     console.log(`📁 媒体目录: ${MEDIA_ROOT_PATH}`);
-    console.log(`🧠 CPU 信息: ${numCPUs} 核心，HEIC 转换使用 ${MAX_HEIC_WORKERS} 个工作线程\n`);
+    console.log(`🧠 CPU 信息: ${numCPUs} 核心，使用 ${MAX_HEIC_WORKERS} 个工作线程并行处理\n`);
 
     if (!fs.existsSync(mediaDir)) {
         console.error(`❌ 错误: ${mediaDir} 目录不存在`);
@@ -424,40 +411,40 @@ async function main() {
         return;
     }
 
-    // 统计 HEIC 文件数量
-    const heicFiles = imageFiles.filter(file =>
-        file.type === 'image' &&
-        (file.fullPath.toLowerCase().endsWith('.heic') || file.fullPath.toLowerCase().endsWith('.heif'))
-    );
+    console.log(`📊 找到 ${stats.total} 个媒体文件\n`);
 
-    console.log(`📊 找到 ${stats.total} 个媒体文件，其中 ${heicFiles.length} 个 HEIC 文件\n`);
+    // 初始化工作线程池
+    initWorkerPool();
 
-    // 初始化 HEIC 工作线程池（仅在有 HEIC 文件时）
-    if (heicFiles.length > 0) {
-        console.log('🔄 初始化 HEIC 转换工作线程池...');
-        initHeicWorkerPool();
-    }
-
-    // 单线程顺序处理所有文件
-    const results = [];
+    // 使用工作线程并行处理所有文件
     let processed = 0;
 
     for (const imageFile of imageFiles) {
         showProgress(processed, stats.total);
-        const result = await generateThumbnail(imageFile);
-        results.push(result);
+        try {
+            const result = await generateThumbnailInWorker(imageFile);
 
-        if (!result.success) {
-            console.log(`\n❌ 处理失败: ${result.path} - ${result.error}`);
+            // 更新统计信息
+            if (result.cached) {
+                stats.cached++;
+            } else {
+                stats.generated++;
+            }
+
+            if (!result.success) {
+                stats.errors++;
+                console.log(`\n❌ 处理失败: ${result.path} - ${result.error}`);
+            }
+        } catch (error) {
+            stats.errors++;
+            console.log(`\n❌ 处理失败: ${imageFile.relativePath} - ${error.message}`);
         }
 
         processed++;
     }
 
     // 清理工作线程池
-    if (heicFiles.length > 0) {
-        cleanupHeicWorkers();
-    }
+    cleanupWorkers();
 
     // 完成统计
     showProgress(stats.total, stats.total);
@@ -474,9 +461,6 @@ async function main() {
     console.log(`   处理失败: ${stats.errors}`);
     console.log(`   用时: ${formatDuration(duration)}`);
     console.log(`   平均速度: ${(stats.total / (duration / 1000)).toFixed(2)} 文件/秒`);
-    if (heicFiles.length > 0) {
-        console.log(`   HEIC 转换: ${heicFiles.length} 个文件使用多线程处理`);
-    }
 
     if (stats.errors > 0) {
         console.log('\n⚠️  部分文件处理失败，请检查上方的错误信息');
