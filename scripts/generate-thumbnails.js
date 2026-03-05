@@ -2,8 +2,8 @@
 
 /**
  * 批量生成缩略图脚本
- * 遍历 public/media 目录下的所有图片，预先生成缩略图
- * 使用: MEDIA_ROOT_PATH=/home/admin/Desktop/project/media node scripts/generate-thumbnails.js
+ * 遍历 process.env.MEDIA_ROOT_PATH || public/media 目录下的所有图片，预先生成缩略图
+ * 使用: node scripts/generate-thumbnails.js
  */
 
 import fs from 'fs';
@@ -16,6 +16,39 @@ import os from 'os';
 import {Worker} from 'worker_threads';
 import {THUMBNAIL_CONFIG} from "../lib/config.js";
 import {SUPPORTED_IMAGE_EXTENSIONS, SUPPORTED_VIDEO_EXTENSIONS} from "../app/media/const.js";
+
+// 加载 .env 配置
+const envConfig = loadEnvFile();
+
+// 优先级：环境变量 > .env 文件 > 默认值
+const MEDIA_ROOT_PATH = process.env.MEDIA_ROOT_PATH || envConfig.MEDIA_ROOT_PATH || 'public/media';
+const FFMPEG_PATH = process.env.FFMPEG_PATH || envConfig.MEDIA_ROOT_PATH;
+const projectName = 'view-img'
+
+// 多线程配置
+const numCPUs = os.cpus().length;
+const MAX_WORKERS = Math.min(8, Math.max(1, numCPUs - 1)); // 最多8个工作线程
+
+// 设置 缓存 目录
+const cacheDir = path.join(process.cwd(), '.next', 'cache', 'thumbnails');
+const videoCacheDir = path.join(process.cwd(), '.next', 'cache', 'video-thumbnails');
+
+// 缩略图配置（与API路由保持一致）
+const THUMBNAIL_CONFIG_IMAGE = THUMBNAIL_CONFIG.IMAGE
+const THUMBNAIL_CONFIG_VIDEO = THUMBNAIL_CONFIG.VIDEO
+
+// 支持的图片格式（与API路由保持一致）
+const IMAGE_EXTENSIONS = SUPPORTED_IMAGE_EXTENSIONS;
+const VIDEO_EXTENSIONS = SUPPORTED_VIDEO_EXTENSIONS;
+
+// 统计信息
+const stats = {
+    total: 0,
+    generated: 0,
+    cached: 0,
+    errors: 0,
+    startTime: Date.now()
+};
 
 /**
  * 读取 .env 文件配置
@@ -60,39 +93,6 @@ function loadEnvFile(envPath = '.env') {
 
     return envConfig;
 }
-
-// 加载 .env 配置
-const envConfig = loadEnvFile();
-
-// 优先级：环境变量 > .env 文件 > 默认值
-const MEDIA_ROOT_PATH = process.env.MEDIA_ROOT_PATH || envConfig.MEDIA_ROOT_PATH || 'public/media';
-const projectName = 'view-img'
-
-// HEIC 转换多线程配置
-const numCPUs = os.cpus().length;
-const MAX_HEIC_WORKERS = Math.min(8, Math.max(1, numCPUs - 1)); // 最多8个工作线程
-
-// 设置 mediaDir 目录
-const mediaDir = path.resolve(process.cwd(), MEDIA_ROOT_PATH);
-const cacheDir = path.join(process.cwd(), '.next', 'cache', 'thumbnails');
-const videoCacheDir = path.join(process.cwd(), '.next', 'cache', 'video-thumbnails');
-
-// 缩略图配置（与API路由保持一致）
-const THUMBNAIL_CONFIG_IMAGE = THUMBNAIL_CONFIG.IMAGE
-const THUMBNAIL_CONFIG_VIDEO = THUMBNAIL_CONFIG.VIDEO
-
-// 支持的图片格式（与API路由保持一致）
-const IMAGE_EXTENSIONS = SUPPORTED_IMAGE_EXTENSIONS;
-const VIDEO_EXTENSIONS = SUPPORTED_VIDEO_EXTENSIONS;
-
-// 统计信息
-const stats = {
-    total: 0,
-    generated: 0,
-    cached: 0,
-    errors: 0,
-    startTime: Date.now()
-};
 
 /**
  * 递归遍历目录获取所有图片文件
@@ -173,7 +173,7 @@ function createThumbnailWorker() {
  * 初始化缩略图生成工作线程池
  */
 function initWorkerPool() {
-    for (let i = 0; i < MAX_HEIC_WORKERS; i++) {
+    for (let i = 0; i < MAX_WORKERS; i++) {
         workerPool.push(createThumbnailWorker());
     }
 }
@@ -335,17 +335,10 @@ function showProgress(current, total) {
 }
 
 function setFfmpegPath() {
-    // 如果找不到 ffmpeg 命令, 可以在这里设置 ffmpeg 文件路径
-    const possiblePaths = [
-        process.env.FFMPEG_PATH,
-        'C:\\Users\\Administrator\\AppData\\Roaming\\bilibili\\ffmpeg\\ffmpeg.exe',
-    ];
-
-    for (const path of possiblePaths) {
-        if (path && fs.existsSync(path)) {
-            ffmpeg.setFfmpegPath(path);
-            break;
-        }
+    // 如果有 FFMPEG_PATH, 就在这里设置 ffmpeg 文件路径
+    const absPath = path.resolve(FFMPEG_PATH || '');
+    if (FFMPEG_PATH && fs.existsSync(absPath)) {
+        ffmpeg.setFfmpegPath(absPath);
     }
 }
 
@@ -392,9 +385,15 @@ async function main() {
     }
     setFfmpegPath();
 
-    console.log('🚀 开始批量生成缩略图...\n');
-    console.log(`📁 媒体目录: ${MEDIA_ROOT_PATH}`);
-    console.log(`🧠 CPU 信息: ${numCPUs} 核心，使用 ${MAX_HEIC_WORKERS} 个工作线程并行处理\n`);
+    const mediaDir = path.resolve(MEDIA_ROOT_PATH);
+
+    console.log('mediaDir', mediaDir);
+    console.log('cacheDir', cacheDir);
+    console.log('videoCacheDir', videoCacheDir);
+
+    console.log('开始批量生成缩略图...\n');
+    console.log(`媒体目录: ${mediaDir}`);
+    console.log(`CPU ${numCPUs} 个核心，使用 ${MAX_WORKERS} 个工作线程并行处理\n`);
 
     if (!fs.existsSync(mediaDir)) {
         console.error(`❌ 错误: ${mediaDir} 目录不存在`);
@@ -467,9 +466,4 @@ async function main() {
     }
 }
 
-// 主线程逻辑
-console.log('mediaDir', mediaDir);
-console.log('cacheDir', cacheDir);
-console.log('videoCacheDir', videoCacheDir);
-console.log('1 秒后开始运行...');
-setTimeout(main, 1000);
+main()
