@@ -80,9 +80,10 @@ async function generateVideoThumbnail(videoPath, outputPath, config) {
  * @param {Object} THUMBNAIL_CONFIG_IMAGE - 图片缩略图配置
  * @param {Object} THUMBNAIL_CONFIG_VIDEO - 视频缩略图配置
  * @param {Object} THUMBNAIL_CONFIG - 通用缩略图配置
+ * @param {Object} FFMPEG_PATH
  * @returns {Promise<Object>} 处理结果
  */
-async function generateThumbnailWorker(imageFile, cacheDir, videoCacheDir, THUMBNAIL_CONFIG_IMAGE, THUMBNAIL_CONFIG_VIDEO, THUMBNAIL_CONFIG) {
+async function generateThumbnailWorker(imageFile, cacheDir, videoCacheDir, THUMBNAIL_CONFIG_IMAGE, THUMBNAIL_CONFIG_VIDEO, THUMBNAIL_CONFIG, FFMPEG_PATH) {
     try {
         const { fullPath, relativePath, type } = imageFile;
 
@@ -127,7 +128,7 @@ async function generateThumbnailWorker(imageFile, cacheDir, videoCacheDir, THUMB
             if (fs.existsSync(cacheFilePath)) {
                 return { success: true, cached: true, path: relativePath };
             }
-
+            setFfmpegPath(FFMPEG_PATH);
             // 生成视频缩略图
             await generateVideoThumbnail(fullPath, cacheFilePath, THUMBNAIL_CONFIG_VIDEO);
         }
@@ -143,6 +144,15 @@ async function generateThumbnailWorker(imageFile, cacheDir, videoCacheDir, THUMB
     }
 }
 
+
+function setFfmpegPath(FFMPEG_PATH) {
+    // 如果有 FFMPEG_PATH, 就在这里设置 ffmpeg 文件路径
+    const absPath = path.resolve(FFMPEG_PATH || '');
+    if (FFMPEG_PATH && fs.existsSync(absPath)) {
+        ffmpeg.setFfmpegPath(absPath);
+    }
+}
+
 // 监听来自主线程的消息
 parentPort.on('message', async (data) => {
     const {
@@ -152,17 +162,18 @@ parentPort.on('message', async (data) => {
         videoCacheDir,
         THUMBNAIL_CONFIG_IMAGE,
         THUMBNAIL_CONFIG_VIDEO,
-        THUMBNAIL_CONFIG
+        THUMBNAIL_CONFIG,
+        FFMPEG_PATH,
     } = data;
     try {
-
         const result = await generateThumbnailWorker(
             imageFile,
             cacheDir,
             videoCacheDir,
             THUMBNAIL_CONFIG_IMAGE,
             THUMBNAIL_CONFIG_VIDEO,
-            THUMBNAIL_CONFIG
+            THUMBNAIL_CONFIG,
+            FFMPEG_PATH,
         );
 
         // 发送处理结果回主线程

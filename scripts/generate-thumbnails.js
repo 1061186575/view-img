@@ -9,7 +9,6 @@
 import fs from 'fs';
 import path from 'path';
 import { createHash } from 'crypto';
-import ffmpeg from 'fluent-ffmpeg';
 import os from 'os';
 import { Worker } from 'worker_threads';
 import { THUMBNAIL_CONFIG } from "../lib/config.js";
@@ -20,7 +19,7 @@ const envConfig = loadEnvFile();
 
 // 优先级：环境变量 > .env 文件 > 默认值
 const MEDIA_ROOT_PATH = process.env.MEDIA_ROOT_PATH || envConfig.MEDIA_ROOT_PATH || 'public/media';
-const FFMPEG_PATH = process.env.FFMPEG_PATH || envConfig.MEDIA_ROOT_PATH;
+const FFMPEG_PATH = process.env.FFMPEG_PATH || envConfig.FFMPEG_PATH;
 const projectName = 'view-img'
 
 // 设置 缓存 目录
@@ -180,7 +179,8 @@ function generateThumbnailInWorker(imageFile) {
             videoCacheDir,
             THUMBNAIL_CONFIG_IMAGE: THUMBNAIL_CONFIG.IMAGE,
             THUMBNAIL_CONFIG_VIDEO: THUMBNAIL_CONFIG.VIDEO,
-            THUMBNAIL_CONFIG
+            THUMBNAIL_CONFIG,
+            FFMPEG_PATH,
         });
     });
 }
@@ -209,14 +209,6 @@ function showProgress(current, total) {
     const percentage = Math.floor((current / total) * 100);
     const bar = '█'.repeat(Math.floor(percentage / 2)) + '░'.repeat(50 - Math.floor(percentage / 2));
     process.stdout.write(`\r进度: [${bar}] ${percentage}% (${current}/${total})`);
-}
-
-function setFfmpegPath() {
-    // 如果有 FFMPEG_PATH, 就在这里设置 ffmpeg 文件路径
-    const absPath = path.resolve(FFMPEG_PATH || '');
-    if (FFMPEG_PATH && fs.existsSync(absPath)) {
-        ffmpeg.setFfmpegPath(absPath);
-    }
 }
 
 /**
@@ -311,7 +303,6 @@ async function main() {
         console.log('请在项目根目录下运行本文件')
         return;
     }
-    setFfmpegPath();
 
     const mediaDir = path.resolve(MEDIA_ROOT_PATH);
 
