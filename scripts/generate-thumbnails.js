@@ -352,7 +352,7 @@ async function main() {
     console.log(`   已缓存: ${stats.cached}`);
     console.log(`   处理失败: ${stats.errors}`);
     console.log(`   用时: ${formatDuration(duration)}`);
-    console.log(`   平均速度: ${(stats.total / (duration / 1000)).toFixed(2)} 文件/秒`);
+    console.log(`   平均生成速度: ${(stats.generated / (duration / 1000)).toFixed(2)} 文件/秒`);
 
     if (stats.errors > 0) {
         console.log('\n⚠️  部分文件处理失败，请检查上方的错误信息');
