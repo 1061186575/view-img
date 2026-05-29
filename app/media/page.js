@@ -470,9 +470,6 @@ export default function MediaPage() {
                         <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
                             暂无媒体文件
                         </h3>
-                        <p className="mt-2 text-gray-500 dark:text-gray-400">
-                            请在 public/media 目录下添加图片或视频文件
-                        </p>
                     </div>
                 )}
             </main>
