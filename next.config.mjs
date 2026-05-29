@@ -21,6 +21,8 @@ const nextConfig = {
             },
         ];
     },
+    // 告诉 Next.js 原封不动地保留多线程逻辑的库
+    serverExternalPackages:['piscina'],
 };
 
 export default nextConfig;
