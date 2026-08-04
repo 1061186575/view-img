@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * 批量生成缩略图脚本
+ * 批量生成缩略图, 可提升预览时的缩略图加载速度
  * 遍历 process.env.MEDIA_ROOT_PATH || public/media 目录下的所有图片，预先生成缩略图
  * 使用: node scripts/generate-thumbnails.js
  */
@@ -20,6 +20,7 @@ const envConfig = loadEnvFile();
 // 优先级：环境变量 > .env 文件 > 默认值
 const MEDIA_ROOT_PATH = process.env.MEDIA_ROOT_PATH || envConfig.MEDIA_ROOT_PATH || 'public/media';
 const FFMPEG_PATH = process.env.FFMPEG_PATH || envConfig.FFMPEG_PATH;
+const thumbnailWorkerPath = './thumbnail-worker.js';
 const projectName = 'view-img'
 
 // 设置 缓存 目录
@@ -134,7 +135,7 @@ function md5(str) {
  * @returns {Worker} 工作线程实例
  */
 function createThumbnailWorker() {
-    return new Worker(new URL('./thumbnail-worker.js', import.meta.url));
+    return new Worker(new URL(thumbnailWorkerPath, import.meta.url));
 }
 
 /**

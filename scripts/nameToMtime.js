@@ -55,4 +55,3 @@ async function fixFileTimes(directory) {
 
 // 使用
 // fixFileTimes('D:\\project\\view-img\\public\\media\\test').catch(console.error);
-fixFileTimes('/home/admin/Desktop/project/media/红米手机/dir1').catch(console.error);
