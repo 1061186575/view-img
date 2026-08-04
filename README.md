@@ -25,7 +25,7 @@
 
 ```bash
 # 克隆项目
-git clone <your-repository-url>
+git clone https://github.com/1061186575/view-img
 cd view-img
 
 # 安装依赖
@@ -127,13 +127,6 @@ npm start
 
 ## 🚀 部署指南
 
-### Vercel 部署（推荐）
-```bash
-npm i -g vercel
-vercel
-```
-
-### 自托管服务器
 ```bash
 npm run build
 npm start
@@ -142,8 +135,11 @@ npm start
 npm i -g pm2
 pm2 start npm --name "view-img" -- start
 
-# 使用 PM2 并且指定端口为3001
-pm2 start npm --name "view-img" -- start -- -p 3001
+# 使用 PM2 并且指定端口为 8080
+pm2 start npm --name "view-img" -- start -- -p 8080
+
+# 使用 PM2 并且设置环境变量
+MEDIA_ROOT_PATH=/home/user/media PORT=8080 pm2 start npm --name "view-img" -- start
 ```
 
 ### Docker 部署

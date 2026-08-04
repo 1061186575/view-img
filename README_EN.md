@@ -25,7 +25,7 @@ English | [中文](./README.md)
 
 ```bash
 # Clone the project
-git clone <your-repository-url>
+git clone https://github.com/1061186575/view-img
 cd view-img
 
 # Install dependencies
@@ -118,20 +118,16 @@ npm run lint
 
 ## 🚀 Deployment Guide
 
-### Vercel Deployment (Recommended)
-```bash
-npm i -g vercel
-vercel
-```
-
-### Self-hosted Server
 ```bash
 npm run build
 npm start
 
-# Or using PM2
 npm i -g pm2
 pm2 start npm --name "view-img" -- start
+
+pm2 start npm --name "view-img" -- start -- -p 8080
+
+MEDIA_ROOT_PATH=/home/user/media PORT=8080 pm2 start npm --name "view-img" -- start
 ```
 
 ### Docker Deployment
