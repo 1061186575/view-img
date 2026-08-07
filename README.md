@@ -21,7 +21,15 @@
 - Node.js 20.9.0 或更高版本
 - npm 或 yarn 包管理器
 
-### 安装
+
+#### Linux 安装 24.x 版本 Node.js
+```shell
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+
+### 安装和启动本项目
 
 ```bash
 # 克隆项目
@@ -67,10 +75,13 @@ npm run dev
 ## 📊 支持的媒体格式
 
 ### 图片格式
-- JPG, PNG, GIF, WebP, SVG, BMP
+- JPG, PNG, GIF, WebP, SVG, BMP, **HEIC**
 
 ### 视频格式
 - MP4, WebM, OGG, AVI, MOV, WMV, FLV, MKV
+
+### 音频格式
+- MP3, WAV, OGG, M4A
 
 ## 💡 使用说明
 

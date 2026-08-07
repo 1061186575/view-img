@@ -21,7 +21,7 @@ export default function AudioPage() {
     const loadDirectory = async (path = '') => {
         setLoading(true);
         try {
-            const result = await getMediaDirectory(path);
+            const result = await getMediaDirectory(path, 1, 5000);
 
             if (result.success) {
                 const audioItems = result.data.items.filter(item => item.type === 'audio');
