@@ -122,6 +122,24 @@ MEDIA_ROOT_PATH=public/media      # 默认：项目内媒体目录
 - **移动端**: 双指缩放和平移
 - **键盘**: ESC 键退出预览
 
+### 5. 登录与共享 Session
+
+在 `.env` 中配置登录开关、账号和 Session：
+
+```bash
+LOGIN_REQUIRED=true
+LOGIN_USERNAME=your_username
+LOGIN_PASSWORD=your_password
+SESSION_CACHE_PATH=/absolute/path/to/sessionsCache
+SESSION_SECRET=your_shared_secret
+SESSION_COOKIE_NAME=rpi_sid
+```
+
+- `LOGIN_REQUIRED=true` 时，未登录页面会跳转到 `/login`，API 返回 `401`。
+- `LOGIN_REQUIRED=false` 时不要求登录。
+- 两个项目在同一主机的不同端口运行时，Cookie 可以直接共享；必须使用相同的 `SESSION_SECRET`、`SESSION_COOKIE_NAME` 和同一个绝对 `SESSION_CACHE_PATH`。
+- 两个项目使用不同子域名时，还需同时设置相同的 `SESSION_COOKIE_DOMAIN`，例如 `.example.com`。
+
 ## 🔧 开发命令
 
 ```bash

@@ -48,3 +48,4 @@ yarn.lock
 
 CLAUDE.md
 md5Cache.json
+sessionsCache/
