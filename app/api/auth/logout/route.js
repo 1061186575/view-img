@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { AUTH_CONFIG } from '@/lib/auth-config';
 import { destroySession, getSessionCookieOptions } from '@/lib/session';
 
-export async function POST(request) {
+export async function GET(request) {
     await destroySession(request);
 
     const response = NextResponse.json({ success: true });

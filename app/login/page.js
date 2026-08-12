@@ -47,9 +47,8 @@ export default function LoginPage() {
     return (
         <main className={styles.loginPage}>
             <section className={styles.loginCard}>
-                <div className={styles.logo}>VI</div>
-                <h1 className={styles.title}>登录媒体预览站</h1>
-                <p className={styles.description}>请输入账号密码后继续访问页面和 API。</p>
+                <h1 className={styles.title}>登录图库</h1>
+                <p className={styles.description}>请输入账号密码后继续访问页面。</p>
 
                 <form className={styles.loginForm} onSubmit={handleSubmit}>
                     <label className={styles.formField}>

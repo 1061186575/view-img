@@ -53,6 +53,28 @@ export default function SettingsPage() {
         }
     };
 
+    const logout = async () => {
+        try {
+            const response = await fetch('/api/auth/logout', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                // 登出成功，重定向到登录页面
+                router.push('/login');
+            } else {
+                // 登出失败，处理错误
+                const errorData = await response.json();
+                showError(errorData.message);
+            }
+        } catch (e) {
+            showError(e.message);
+        }
+    }
+
     // 处理设置更改
     const handleSettingChange = (key, value) => {
         setSettings(prev => ({
@@ -170,13 +192,21 @@ export default function SettingsPage() {
                             </div>
                         </div>
 
-                        {/* 保存按钮 */}
+                        {/* 按钮 */}
                         <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
                             <div className="flex justify-end">
                                 <button
+                                    onClick={logout}
+                                    className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
+                                        'bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500'
+                                    } transition-colors`}
+                                >
+                                    退出登录
+                                </button>
+                                <button
                                     onClick={saveSettings}
                                     disabled={saving}
-                                    className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
+                                    className={`ml-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
                                         saving
                                             ? 'bg-gray-400 cursor-not-allowed'
                                             : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
