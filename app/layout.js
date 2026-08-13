@@ -1,15 +1,17 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { ToastProvider } from "@/context/ToastContext";
 
-const geistSans = Geist({
+const geistSans = localFont({
+    src: "./fonts/geist-sans.woff2",
     variable: "--font-geist-sans",
-    subsets: ["latin"],
+    display: "swap",
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+    src: "./fonts/geist-mono.woff2",
     variable: "--font-geist-mono",
-    subsets: ["latin"],
+    display: "swap",
 });
 
 export default function RootLayout({ children }) {
