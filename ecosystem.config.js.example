@@ -1,0 +1,44 @@
+/**
+ * 运行:
+ * pm2 start ecosystem.config.js
+ *
+ * 修改 .env 后：
+ * pm2 restart ecosystem.config.js
+ *
+ * 修改 ecosystem.config.js 后：
+ * pm2 startOrReload ecosystem.config.js --update-env
+ * pm2 save
+ */
+
+const instances = [
+    {
+        name: 'view-img-family',
+        port: 8081,
+        MEDIA_ROOT_PATH: '/home/user/media/family',
+        LOGIN_REQUIRED: true,
+    },
+    {
+        name: 'view-img-public',
+        port: 8082,
+        MEDIA_ROOT_PATH: '/home/user/media/public',
+        LOGIN_REQUIRED: false,
+    },
+];
+
+module.exports = {
+    apps: instances.map(({ name, port, MEDIA_ROOT_PATH, LOGIN_REQUIRED }) => ({
+        name,
+        cwd: __dirname, // __dirname 确保 Next.js 始终从项目根目录读取 .env
+        script: 'node_modules/.bin/next',
+        args: 'start',
+        exec_mode: 'fork',
+        instances: 1,
+        env: {
+            // 这里的环境变量优先级高于 .env 文件
+            NODE_ENV: 'production',
+            PORT: String(port),
+            MEDIA_ROOT_PATH,
+            LOGIN_REQUIRED: String(LOGIN_REQUIRED),
+        },
+    })),
+};

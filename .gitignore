@@ -49,3 +49,4 @@ yarn.lock
 CLAUDE.md
 md5Cache.json
 sessionsCache/
+ecosystem.config.js
