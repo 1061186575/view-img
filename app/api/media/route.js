@@ -9,6 +9,16 @@ import {
 } from "@/app/media/const";
 import { MEDIA_CONFIG } from "@/lib/config";
 
+async function isDirectoryEmpty(directoryPath) {
+    try {
+        const files = await fs.readdir(directoryPath);
+        return files.length === 0;
+    } catch (e) {
+        console.log(`isDirectoryEmpty:`, e);
+        return true;
+    }
+}
+
 export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);
@@ -58,11 +68,13 @@ export async function GET(request) {
                 const filepath = folder ? `${folder}/${item}` : item;
 
                 if (stats.isDirectory()) {
+                    const isEmpty = await isDirectoryEmpty(itemPath);
                     // 添加文件夹
                     return {
                         name: item,
                         type: SupportedTypes.folder,
                         path: filepath,
+                        isEmpty,
                         mtime: stats.mtime.getTime(), // 修改时间
                         birthtime: stats.birthtime.getTime() // 创建时间
                     };

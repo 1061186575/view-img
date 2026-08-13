@@ -373,7 +373,7 @@ export default function MediaPage() {
                                     <div className="aspect-square relative">
                                         {item.type === SupportedTypes.folder && <div
                                             className="flex flex-col items-center justify-center h-full bg-blue-50 dark:bg-blue-900/20">
-                                            <FolderIcon className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+                                            <FolderIcon className={`w-12 h-12 dark:text-blue-400 ${item.isEmpty ? 'text-gray-600' : 'text-blue-400'}`} />
                                             <span className="text-sm p-1">{settings.hideFileInfo && item.name}</span>
                                         </div>}
                                         {item.type === SupportedTypes.image && (
