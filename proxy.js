@@ -8,7 +8,25 @@ const publicPaths = new Set([
 ]);
 
 export async function proxy(request) {
-    if (!AUTH_CONFIG.LOGIN_REQUIRED || publicPaths.has(request.nextUrl.pathname)) {
+    if (!AUTH_CONFIG.LOGIN_REQUIRED) {
+        return NextResponse.next();
+    }
+
+    if (request.nextUrl.pathname === '/login') {
+        try {
+            const authenticatedSession = await getAuthenticatedSession(request);
+
+            if (authenticatedSession) {
+                return NextResponse.redirect(new URL('/', request.url));
+            }
+        } catch (error) {
+            console.error('登录鉴权配置错误:', error);
+        }
+
+        return NextResponse.next();
+    }
+
+    if (publicPaths.has(request.nextUrl.pathname)) {
         return NextResponse.next();
     }
 
