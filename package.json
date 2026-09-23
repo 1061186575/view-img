@@ -2,6 +2,7 @@
     "name": "view-img",
     "version": "1.0.1",
     "private": true,
+    "type": "module",
     "scripts": {
         "dev": "next dev -p 8080",
         "build": "next build",
@@ -9,6 +10,7 @@
         "bs": "next build && next start",
         "lint": "eslint",
         "generate-thumbnails": "node ./scripts/generate-thumbnails.js",
+        "convert-heic": "node ./scripts/convert-heic-to-jpeg.js",
         "publish": "zbox file scp"
     },
     "dependencies": {
