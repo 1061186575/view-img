@@ -172,16 +172,15 @@ function moveToBackup(fullPath) {
 
 /**
  * 处理单个 HEIC/HEIF 文件
+ * 主线程只负责：把路径交给 Worker 处理，转换成功后移动原始文件到备份目录
  * @param {Object} heicFile - 文件信息
  */
 async function processFile(heicFile) {
     try {
-        const buffer = fs.readFileSync(heicFile.fullPath);
-        const jpegBuffer = await piscina.run(buffer);
-
         const outputPath = getJpegPath(heicFile.fullPath);
-        fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-        fs.writeFileSync(outputPath, jpegBuffer);
+
+        // Worker 内部完成：读取 HEIC -> 转码 -> 写入 JPEG
+        await piscina.run({ inputPath: heicFile.fullPath, outputPath });
 
         // 生成 JPEG 成功后再移动原始文件
         moveToBackup(heicFile.fullPath);
