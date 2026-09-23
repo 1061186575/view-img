@@ -9,7 +9,6 @@
         "bs": "next build && next start",
         "lint": "eslint",
         "generate-thumbnails": "node ./scripts/generate-thumbnails.js",
-        "classify-files": "node ./scripts/classify-files.js",
         "publish": "zbox file scp"
     },
     "dependencies": {
