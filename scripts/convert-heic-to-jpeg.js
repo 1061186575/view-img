@@ -5,6 +5,7 @@
  *
  * - 使用 heic-convert 转换，quality 为 1（最高质量）
  * - 使用 Piscina 线程池充分利用多核 CPU
+ * - 转换后保留原图的修改时间和访问时间（Node.js 文件接口不支持设置创建时间 birthtime），不保留拍摄时间和 GPS 等信息
  * - 转换成功后，将原始 HEIC/HEIF 文件移动到 MEDIA_ROOT_PATH/heic-backup 目录
  *
  * 使用: node scripts/convert-heic-to-jpeg.js
@@ -179,10 +180,10 @@ async function processFile(heicFile) {
     try {
         const outputPath = getJpegPath(heicFile.fullPath);
 
-        // Worker 内部完成：读取 HEIC -> 转码 -> 写入 JPEG
+        // Worker 内部完成：保存原图时间 -> 读取 HEIC -> 转码 -> 写入 JPEG -> 同步时间
         await piscina.run({ inputPath: heicFile.fullPath, outputPath });
 
-        // 生成 JPEG 成功后再移动原始文件
+        // 生成 JPEG 并同步时间成功后再移动原始文件
         moveToBackup(heicFile.fullPath);
         stats.converted++;
     } catch (error) {

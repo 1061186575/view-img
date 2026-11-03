@@ -2,7 +2,7 @@
  * HEIC/HEIF 转 JPEG 工作线程
  * 用于 Piscina 线程池并行执行耗时的 HEIC 转码计算
  *
- * 主线程只把文件路径传进来，由 Worker 自己完成读取、转码和写入，
+ * 主线程只把文件路径传进来，由 Worker 自己完成读取、转码、写入和时间同步，
  * 主线程仅负责转换成功后的「移动原文件」这一轻量操作。
  */
 
@@ -40,11 +40,14 @@ function findAvailablePath(outputPath) {
 }
 
 /**
- * 读取 HEIC/HEIF 文件并转换为 JPEG（质量 1，即最高质量），然后写入目标路径
+ * 读取 HEIC/HEIF 文件并转换为 JPEG（质量 1，即最高质量），写入后保留原图的修改时间和访问时间
  * @param {{inputPath: string, outputPath: string}} task - 输入/输出文件路径
  * @returns {Promise<{success: boolean, outputPath: string, skipped?: boolean}>} 处理结果
  */
 export default async function convertHeicToJpeg({ inputPath, outputPath }) {
+    // 必须在读取原图前保存时间，读取文件可能更新访问时间。
+    const sourceStats = fs.statSync(inputPath);
+
     // 读取原始 HEIC/HEIF 文件
     const buffer = fs.readFileSync(inputPath);
 
@@ -56,24 +59,30 @@ export default async function convertHeicToJpeg({ inputPath, outputPath }) {
     });
 
     const newMd5 = md5(jpegBuffer);
+    let skipped = false;
 
     // 目标文件已存在时，先比较内容 MD5
     if (fs.existsSync(outputPath)) {
         const existingBuffer = fs.readFileSync(outputPath);
         const existingMd5 = md5(existingBuffer);
 
-        // 内容一致：跳过写入，直接返回原路径
+        // 内容一致：跳过写入，仍需同步原图时间。
         if (existingMd5 === newMd5) {
-            return { success: true, outputPath, skipped: true };
+            skipped = true;
+        } else {
+            // 内容不一致：不覆盖原图，重命名后输出新路径
+            outputPath = findAvailablePath(outputPath);
         }
-
-        // 内容不一致：不覆盖原图，重命名后输出新路径
-        outputPath = findAvailablePath(outputPath);
     }
 
     // 写入 JPEG 文件
-    fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-    fs.writeFileSync(outputPath, jpegBuffer);
+    if (!skipped) {
+        fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+        fs.writeFileSync(outputPath, jpegBuffer);
+    }
 
-    return { success: true, outputPath, skipped: false };
+    // 使用最终输出路径；utimes 只能设置 atime/mtime，无法设置创建时间 birthtime。
+    fs.utimesSync(outputPath, sourceStats.atimeMs / 1000, sourceStats.mtimeMs / 1000);
+
+    return { success: true, outputPath, skipped };
 }
