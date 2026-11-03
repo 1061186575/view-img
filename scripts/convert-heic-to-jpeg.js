@@ -43,7 +43,7 @@ const stats = {
 
 // 创建 Piscina 线程池
 const piscina = new Piscina({
-    filename: path.resolve(process.cwd(), 'scripts/heic-convert-worker.js'),
+    filename: path.resolve(process.cwd(), 'scripts/convert-heic-to-jpeg-worker.js'),
     minThreads: 1,
     maxThreads: MAX_WORKERS,
     idleTimeout: 30000, // 30 秒后关闭空闲线程

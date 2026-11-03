@@ -10,7 +10,7 @@
         "bs": "next build && next start",
         "lint": "eslint",
         "generate-thumbnails": "node ./scripts/generate-thumbnails.js",
-        "convert-heic": "node ./scripts/convert-heic-to-jpeg.js",
+        "heic2jpg": "node ./scripts/convert-heic-to-jpeg.js",
         "publish": "zbox file scp"
     },
     "dependencies": {

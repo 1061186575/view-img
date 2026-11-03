@@ -20,7 +20,7 @@ const envConfig = loadEnvFile();
 // 优先级：环境变量 > .env 文件 > 默认值
 const MEDIA_ROOT_PATH = process.env.MEDIA_ROOT_PATH || envConfig.MEDIA_ROOT_PATH || 'public/media';
 const FFMPEG_PATH = process.env.FFMPEG_PATH || envConfig.FFMPEG_PATH;
-const thumbnailWorkerPath = './thumbnail-worker.js';
+const thumbnailWorkerPath = './generate-thumbnails-worker.js';
 const projectName = 'view-img'
 
 // 设置 缓存 目录
